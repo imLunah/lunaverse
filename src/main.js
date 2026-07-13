@@ -171,15 +171,17 @@ const MOON_NIGHT = new THREE.Vector3(2.8, 11, -60); // framed by the panes
 // Each body carries its own traveler whose arc starts from WHEREVER the body
 // currently is: spamming the toggle retargets mid-sky bodies smoothly instead
 // of teleporting them onto a re-aimed fixed path.
+// Controls sit far off the straight line so the arcs whip: exits shoot
+// sideways before climbing out; entries sweep in high and dive onto the perch
 const SUN_DAY = new THREE.Vector3(3.5, 8.5, -60); // matches MOODS.day.orbPos
 const SUN_EXIT = new THREE.Vector3(15, 25, -60);
-const SUN_EXIT_CTRL = new THREE.Vector3(13.5, 10, -60);
+const SUN_EXIT_CTRL = new THREE.Vector3(17, 7, -60);
 const SUN_ENTRY = new THREE.Vector3(-14, 22, -60);
-const SUN_ENTRY_CTRL = new THREE.Vector3(-4, 16, -60);
+const SUN_ENTRY_CTRL = new THREE.Vector3(2, 20, -60);
 const MOON_EXIT = new THREE.Vector3(15, 26, -60);
-const MOON_EXIT_CTRL = new THREE.Vector3(13, 12, -60);
+const MOON_EXIT_CTRL = new THREE.Vector3(18, 13, -60);
 const MOON_ENTRY = new THREE.Vector3(-14, 24, -60);
-const MOON_ENTRY_CTRL = new THREE.Vector3(0, 15, -60);
+const MOON_ENTRY_CTRL = new THREE.Vector3(4, 18, -60);
 
 function arcLerp(out, a, ctrl, b, k) {
   const u = 1 - k;
@@ -191,7 +193,7 @@ function arcLerp(out, a, ctrl, b, k) {
 }
 
 function makeTraveler(mesh) {
-  return { mesh, t: -1, dur: 2.6, from: new THREE.Vector3(), ctrl: new THREE.Vector3(), to: new THREE.Vector3() };
+  return { mesh, t: -1, dur: 1.3, from: new THREE.Vector3(), ctrl: new THREE.Vector3(), to: new THREE.Vector3() };
 }
 const sunTravel = makeTraveler(orb);
 const moonTravel = makeTraveler(moon);
