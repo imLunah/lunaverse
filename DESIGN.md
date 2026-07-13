@@ -2,15 +2,17 @@
 
 The design system for John Dang's interactive 3D about-me site.
 
-**Visual direction (revised 2026-07-12, post-checkpoints):** realistic first-person
-interior — you stand IN the room at eye height (no diorama/orbit view; John
-explicitly rejected the "box look"). Realism comes from image-based lighting
-(RoomEnvironment IBL), scanned CC0 PBR textures (ambientCG: WoodFloor043 floor,
-Wood067 furniture + wall paneling, Plaster001 ceiling, Carpet004 rug — in
-`public/textures/`), rounded-edge geometry everywhere, and subtle UnrealBloom.
-No fireflies, no floating glow markers — affordance comes from the objects
-themselves (hover glow). Camera: FOV 68°, drag-to-look (yaw ±2.35 — the room
-wraps around you), breathing sway.
+**Visual direction (settled 2026-07-12, after /design-review):** **cute
+cartoony with real lighting** — first-person interior (you stand IN the room;
+John rejects diorama views), chunky toy-like geometry (RoundedBox radii up to
+0.085), clean stylized surfaces (procedural plank lines, soft plaster bump,
+subtle grain — NO photo scans), warm saturated-pastel palette (honey wood,
+butter cream walls, coral rug, sage plants). The realism lives entirely in the
+LIGHTING: RoomEnvironment IBL, soft shadows, golden sunset shaft, gentle
+UnrealBloom. Reference genre: Behance isometric cozy-bedroom renders — cute
+shapes, real light. `public/textures/` + `src/pbr.js` are the unused road back
+to photoreal if ever wanted. Camera: FOV 68°, drag-to-look (yaw ±2.35),
+breathing sway. No audio autoplay — the record player starts music on request.
 
 **Mood board (second reference, warm-wood render):** full wood paneling with a
 dark panel rail, dark plank floor, ceiling beams, cream curtains, bed with
