@@ -406,6 +406,8 @@ function applyMood(k) {
   moonlight.intensity = THREE.MathUtils.lerp(n.dirIntensity, d.dirIntensity, k);
   lamp.light.intensity = THREE.MathUtils.lerp(n.lampLight, d.lampLight, k);
   lamp.shadeMat.emissiveIntensity = THREE.MathUtils.lerp(n.lampShade, d.lampShade, k);
+  sillLight.intensity = THREE.MathUtils.lerp(0.5, 2.4, k);
+  lerpC(sillLight.color, new THREE.Color(0xaec6ff), new THREE.Color(0xffb877), k);
   refs.deskLamp.light.intensity = THREE.MathUtils.lerp(n.deskLamp, d.deskLamp, k);
   if (refs.deskLamp.shadeMat) {
     refs.deskLamp.shadeMat.emissiveIntensity = THREE.MathUtils.lerp(n.deskGlow, d.deskGlow, k);
@@ -500,6 +502,13 @@ function owlSay(line) {
   owlBubble.tex.needsUpdate = true;
   owlBubble.t = 0;
 }
+
+// Sill bounce: the sun/moon behind the panes leaves the owl's room-facing
+// side unlit and it reads flat against the bright sky. A small light plays
+// the part of light reflecting off the sill — warm by day, moon-cool at night.
+const sillLight = new THREE.PointLight(0xffb877, 0, 3.2, 2);
+sillLight.position.set(0.45, 2.7, -3.5);
+scene.add(sillLight);
 
 // Robin flying loops outside the window
 const bird = buildBird({
