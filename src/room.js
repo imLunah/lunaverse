@@ -335,19 +335,6 @@ function buildCurtains() {
   return g;
 }
 
-function buildSkateboard() {
-  const g = new THREE.Group();
-  const deck = box(0.62, 0.045, 1.85, woodMat(0x8a5a36), 0, 0, 0);
-  const wheelMat = mat(0xf0d9a8, { roughness: 0.5 });
-  for (const [x, z] of [[-0.2, -0.6], [0.2, -0.6], [-0.2, 0.6], [0.2, 0.6]]) {
-    const w = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.05, 12), wheelMat);
-    w.rotation.z = Math.PI / 2;
-    w.position.set(x, 0.07, z);
-    g.add(w);
-  }
-  return g;
-}
-
 /** Avant-garde fashion corner: garment rack, dress form, mirror, boots. Clickable → style. */
 function buildFashionCorner(interactives, refs) {
   const g = new THREE.Group();
@@ -657,11 +644,6 @@ export function buildRoom() {
   const fashion = buildFashionCorner(interactives, refs);
   fashion.position.set(4.15, 0, 2.6);
   room.add(fashion);
-
-  const skateboard = buildSkateboard();
-  skateboard.position.set(-3.1, 0.12, 3.55); // parked flat by the door
-  skateboard.rotation.set(0, 0.55, 0);
-  room.add(skateboard);
 
   const lamp = buildLamp();
   lamp.group.position.set(-4.1, 0, 3.3); // front-left corner, clear of the bed

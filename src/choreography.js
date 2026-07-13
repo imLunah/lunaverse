@@ -28,7 +28,8 @@ const FOCUS = {
   // The laptop's open lid tilts back ~22°, so the camera sits high, along its normal
   projects: { pos: new THREE.Vector3(-2.65, 2.9, -1.65), target: new THREE.Vector3(-3.1, 2.1, -3.55) },
   contact: { pos: new THREE.Vector3(-2.15, 2.55, -1.2), target: new THREE.Vector3(-2.15, 2.0, -2.75) },
-  about: { pos: new THREE.Vector3(-3.15, 3.35, -2.0), target: new THREE.Vector3(-4.6, 3.35, -2.0) },
+  // Aimed between the frame (z -2) and where the bio card slides out (z ~-1.35)
+  about: { pos: new THREE.Vector3(-2.85, 3.4, -1.62), target: new THREE.Vector3(-4.6, 3.3, -1.62) },
   style: { pos: new THREE.Vector3(3.0, 1.8, 2.3), target: new THREE.Vector3(4.5, 1.5, 2.7) },
 };
 
@@ -214,10 +215,10 @@ export class Choreography {
       const br = this.action === "about" ? r : 0;
       const panel = photo.bioPanel;
       panel.scale.setScalar(Math.max(0.001, br));
-      panel.position.x = -0.1 - br * 1.18;
-      panel.position.y = -0.1 + br * 0.1;
-      panel.position.z = 0.03 + br * 0.22;
-      panel.rotation.y = -br * 0.28;
+      panel.position.x = -0.1 - br * 0.65; // slides beside the frame, not out of shot
+      panel.position.y = -0.1 + br * 0.05;
+      panel.position.z = 0.03 + br * 0.3;
+      if (br > 0.05) panel.lookAt(this.camera.position);
     }
     if (this.action === "style" || r > 0.002) {
       const sr = this.action === "style" ? r : 0;

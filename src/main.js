@@ -163,6 +163,30 @@ scene.add(moon);
 const MOON_NIGHT = new THREE.Vector3(2.8, 11, -60); // framed by the panes
 const MOON_DAY = new THREE.Vector3(2.0, -13, -60); // below the frame — it rises into view
 
+// Little stars in the patch of sky the window actually shows — the dome
+// stars sit too high and wide to ever be seen through the panes
+let windowStarsMat;
+{
+  const n = 90;
+  const pos = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++) {
+    pos.set(
+      [-14 + Math.random() * 34, 3 + Math.random() * 26, -52 - Math.random() * 16],
+      i * 3
+    );
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+  windowStarsMat = new THREE.PointsMaterial({
+    color: 0xfdf3e3,
+    size: 0.22,
+    sizeAttenuation: true,
+    transparent: true,
+    opacity: 0,
+  });
+  scene.add(new THREE.Points(g, windowStarsMat));
+}
+
 /* Sun shafts through the window — cheated volumetrics: additive gradient
    quads hung from the panes along the light direction, a glare sprite over
    the glass, and slow dust motes inside the beam. All fade with the mood. */
@@ -318,12 +342,16 @@ const hello = createHello(REDUCED_MOTION);
 const helloMat = new THREE.MeshBasicMaterial({ map: hello.texture });
 refs.monitor.screen.material = helloMat;
 
-// Screens are unlit materials — dim them after dark or they bloom into glare
-const screenMats = [resumeMat, helloMat];
+const letterMat = new THREE.MeshBasicMaterial({ map: surfaces.letter, side: THREE.DoubleSide });
+refs.envelope.letter.material = letterMat;
+const bioMat = new THREE.MeshBasicMaterial({ map: surfaces.bio, side: THREE.DoubleSide });
+refs.photo.bioPanel.material = bioMat;
+const styleMat = new THREE.MeshBasicMaterial({ map: surfaces.style, side: THREE.DoubleSide });
+refs.fashion.card.material = styleMat;
 
-refs.envelope.letter.material = new THREE.MeshBasicMaterial({ map: surfaces.letter, side: THREE.DoubleSide });
-refs.photo.bioPanel.material = new THREE.MeshBasicMaterial({ map: surfaces.bio, side: THREE.DoubleSide });
-refs.fashion.card.material = new THREE.MeshBasicMaterial({ map: surfaces.style, side: THREE.DoubleSide });
+// Every unlit reading surface dims with the mood — at full white they push
+// past the bloom threshold and wash out into unreadable glare
+const screenMats = [resumeMat, helloMat, letterMat, bioMat, styleMat];
 
 /* ═══════════════ Day / night moods (decision 4C) ═══════════════ */
 
@@ -336,7 +364,7 @@ const MOODS = {
     stars: 0.8,
     orb: new THREE.Color(0xff8a55), orbPos: new THREE.Vector3(6, -16, -60), // the sun, fully below the window frame
     ambient: 0.48, ambientColor: new THREE.Color(0x9c8a7a), hemi: 0.22,
-    dir: new THREE.Color(0xa8c4ff), dirIntensity: 1.0, dirPos: new THREE.Vector3(8, 16, -14),
+    dir: new THREE.Color(0xa8c4ff), dirIntensity: 0.5, dirPos: new THREE.Vector3(8, 16, -14),
     lampLight: 32, lampShade: 0.9, deskLamp: 6, deskGlow: 0.9, exposure: 1.0, env: 0.14, screens: 0.68,
     bloom: 0.25, bloomThreshold: 0.88,
     wall: new THREE.Color(0x8a7266), floor: new THREE.Color(0.55, 0.44, 0.36),
@@ -367,6 +395,7 @@ function applyMood(k) {
   lerpC(sky_.cMid.value, n.skyMid, d.skyMid, k);
   lerpC(sky_.cBot.value, n.skyBot, d.skyBot, k);
   starsMat.opacity = THREE.MathUtils.lerp(n.stars, d.stars, k);
+  windowStarsMat.opacity = THREE.MathUtils.lerp(0.95, 0, k);
   lerpC(orb.material.color, n.orb, d.orb, k);
   orb.position.lerpVectors(n.orbPos, d.orbPos, k);
   moonlight.position.lerpVectors(n.dirPos, d.dirPos, k);
@@ -427,6 +456,7 @@ const owlBubble = (() => {
   sprite.scale.set(1.55, 0.68, 1);
   sprite.position.copy(smallOwl.group.position).add(new THREE.Vector3(0.15, 0.85, 0.25));
   scene.add(sprite);
+  screenMats.push(sprite.material); // the bubble reads like a card — keep it out of the bloom
   return { ctx: c.getContext("2d"), tex, sprite, t: -1 };
 })();
 
