@@ -702,19 +702,35 @@ export function buildRoom() {
   shelfBooks.position.set(-3.3, 3.15, wz + 0.42);
   room.add(shelfBooks);
 
-  // Candle on the desk (7A) — the light flickers in the main loop
-  const candle = new THREE.Group();
-  const wax = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.06, 0.24, 16), mat(PALETTE.cream, { roughness: 0.5 }));
-  wax.position.y = 0.12;
-  wax.castShadow = true;
-  const flame = new THREE.Mesh(new THREE.ConeGeometry(0.022, 0.08, 8), new THREE.MeshBasicMaterial({ color: 0xffc873 }));
-  flame.position.y = 0.29;
-  const candleLight = new THREE.PointLight(0xffa54f, 1.6, 2.5, 2);
-  candleLight.position.y = 0.34;
-  candle.add(wax, flame, candleLight);
-  candle.position.set(-3.45, 1.68, -3.6);
-  room.add(candle);
-  refs.candle = { light: candleLight, flame };
+  // Little desk lamp — applyMood turns it on at night, off for the sunset
+  const deskLamp = new THREE.Group();
+  const dlMetal = mat(0x2e2a33, { roughness: 0.35, metalness: 0.55 });
+  const dlBase = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.14, 0.05, 14), dlMetal);
+  dlBase.position.y = 0.025;
+  dlBase.castShadow = true;
+  const dlArm = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.42, 8), dlMetal);
+  dlArm.position.set(0.06, 0.23, 0);
+  dlArm.rotation.z = -0.3;
+  const dlShadeMat = new THREE.MeshStandardMaterial({
+    color: PALETTE.amber,
+    emissive: PALETTE.amber,
+    emissiveIntensity: 0.85,
+    roughness: 0.6,
+    side: THREE.DoubleSide,
+  });
+  const dlShade = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.14, 0.15, 14, 1, true), dlShadeMat);
+  dlShade.position.set(0.15, 0.46, 0);
+  dlShade.rotation.z = -0.25;
+  const dlBulbMat = new THREE.MeshBasicMaterial({ color: 0xffe8c0 });
+  const dlBulb = new THREE.Mesh(new THREE.SphereGeometry(0.045, 10, 8), dlBulbMat);
+  dlBulb.position.set(0.17, 0.41, 0);
+  const dlLight = new THREE.PointLight(0xffc27a, 6, 4.5, 2);
+  dlLight.position.set(0.17, 0.44, 0);
+  deskLamp.add(dlBase, dlArm, dlShade, dlBulb, dlLight);
+  deskLamp.position.set(-3.45, 1.68, -3.55);
+  deskLamp.rotation.y = 0.5;
+  room.add(deskLamp);
+  refs.deskLamp = { light: dlLight, shadeMat: dlShadeMat, bulbMat: dlBulbMat };
 
   const windowWorldPos = new THREE.Vector3(winCx, winCy, wz);
 

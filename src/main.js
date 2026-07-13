@@ -129,13 +129,153 @@ let starsMat;
   scene.add(new THREE.Points(g, starsMat));
 }
 
-// Moon by night, sun by day — same orb, regraded
+// The sun: sinks below the horizon and fades as night comes on (applyMood)
 const orb = new THREE.Mesh(
   new THREE.SphereGeometry(2.4, 24, 24),
-  new THREE.MeshBasicMaterial({ color: 0xfff3d6 })
+  new THREE.MeshBasicMaterial({ color: 0xffd489, transparent: true })
 );
-orb.position.set(6, 22, -60);
+orb.position.set(3.5, 8.5, -60);
 scene.add(orb);
+
+// The crescent moon: rises into the window as the sun sets
+function crescentTexture() {
+  const c = document.createElement("canvas");
+  c.width = c.height = 256;
+  const g = c.getContext("2d");
+  g.fillStyle = "#e9eff9";
+  g.beginPath();
+  g.arc(128, 128, 92, 0, Math.PI * 2);
+  g.fill();
+  g.globalCompositeOperation = "destination-out";
+  g.beginPath();
+  g.arc(172, 96, 86, 0, Math.PI * 2);
+  g.fill();
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+const moon = new THREE.Mesh(
+  new THREE.PlaneGeometry(5.4, 5.4),
+  new THREE.MeshBasicMaterial({ map: crescentTexture(), transparent: true, opacity: 0, depthWrite: false })
+);
+moon.position.set(2.8, 11, -60);
+scene.add(moon);
+const MOON_NIGHT = new THREE.Vector3(2.8, 11, -60); // framed by the panes
+const MOON_DAY = new THREE.Vector3(2.0, 3.0, -60); // parked low, faded out
+
+/* Sun shafts through the window — cheated volumetrics: additive gradient
+   quads hung from the panes along the light direction, a glare sprite over
+   the glass, and slow dust motes inside the beam. All fade with the mood. */
+const sunRays = new THREE.Group();
+{
+  const rayTex = (() => {
+    const c = document.createElement("canvas");
+    c.width = 128;
+    c.height = 512;
+    const g = c.getContext("2d");
+    let gr = g.createLinearGradient(0, 0, 0, 512);
+    gr.addColorStop(0, "rgba(255,255,255,0.95)");
+    gr.addColorStop(0.55, "rgba(255,255,255,0.4)");
+    gr.addColorStop(1, "rgba(255,255,255,0)");
+    g.fillStyle = gr;
+    g.fillRect(0, 0, 128, 512);
+    g.globalCompositeOperation = "destination-in";
+    gr = g.createLinearGradient(0, 0, 128, 0);
+    gr.addColorStop(0, "rgba(0,0,0,0)");
+    gr.addColorStop(0.25, "rgba(0,0,0,1)");
+    gr.addColorStop(0.75, "rgba(0,0,0,1)");
+    gr.addColorStop(1, "rgba(0,0,0,0)");
+    g.fillStyle = gr;
+    g.fillRect(0, 0, 128, 512);
+    return new THREE.CanvasTexture(c);
+  })();
+
+  // Direction the day sun travels (window → into the room), from MOODS.day.dirPos
+  const shaftDir = new THREE.Vector3(-4.5, -5.8, 16).normalize();
+  const qShaft = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, -1, 0), shaftDir);
+  const beamGeo = new THREE.PlaneGeometry(1, 1);
+  beamGeo.translate(0, -0.5, 0); // hang from the top edge
+  const beams = [
+    { x: 0.55, y: 4.1, w: 0.95, len: 9.5, o: 0.4 },
+    { x: 1.45, y: 4.25, w: 0.7, len: 8.5, o: 0.34 },
+    { x: 2.25, y: 4.0, w: 0.5, len: 9.0, o: 0.3 },
+    { x: 1.4, y: 4.3, w: 2.6, len: 7.5, o: 0.16 }, // wide soft wash behind the crisp beams
+  ];
+  const _axisY = new THREE.Vector3(0, 1, 0);
+  for (const b of beams) {
+    for (const twist of [0, Math.PI / 2]) {
+      const m = new THREE.Mesh(
+        beamGeo,
+        new THREE.MeshBasicMaterial({
+          map: rayTex,
+          color: 0xffc27a,
+          transparent: true,
+          opacity: 0,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+          side: THREE.DoubleSide,
+        })
+      );
+      m.userData.baseOpacity = b.o * (twist ? 0.65 : 1);
+      m.scale.set(b.w, b.len, 1);
+      m.position.set(b.x, b.y, -4.28);
+      m.quaternion.copy(qShaft).multiply(new THREE.Quaternion().setFromAxisAngle(_axisY, twist));
+      sunRays.add(m);
+    }
+  }
+
+  // Glare blob over the glass — the blown-out window read
+  const glareTex = (() => {
+    const c = document.createElement("canvas");
+    c.width = c.height = 256;
+    const g = c.getContext("2d");
+    const gr = g.createRadialGradient(128, 128, 10, 128, 128, 128);
+    gr.addColorStop(0, "rgba(255,244,220,0.95)");
+    gr.addColorStop(0.4, "rgba(255,224,170,0.5)");
+    gr.addColorStop(1, "rgba(255,224,170,0)");
+    g.fillStyle = gr;
+    g.fillRect(0, 0, 256, 256);
+    return new THREE.CanvasTexture(c);
+  })();
+  const glare = new THREE.Sprite(
+    new THREE.SpriteMaterial({ map: glareTex, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false })
+  );
+  glare.userData.baseOpacity = 0.55;
+  glare.scale.set(5.6, 4.4, 1);
+  glare.position.set(1.4, 3.2, -4.45);
+  sunRays.add(glare);
+
+  // Dust motes drifting in the beam
+  const MOTES = 42;
+  const motePos = new Float32Array(MOTES * 3);
+  const moteSeed = [];
+  for (let i = 0; i < MOTES; i++) {
+    const t = Math.random() * 7.5;
+    const x = 1.4 + shaftDir.x * t + (Math.random() - 0.5) * 2.0;
+    const y = Math.max(0.3, 4.0 + shaftDir.y * t + (Math.random() - 0.5) * 1.2);
+    const z = -4.3 + shaftDir.z * t * 0.55;
+    motePos.set([x, y, z], i * 3);
+    moteSeed.push(Math.random() * Math.PI * 2);
+  }
+  const moteGeo = new THREE.BufferGeometry();
+  moteGeo.setAttribute("position", new THREE.BufferAttribute(motePos, 3));
+  const motes = new THREE.Points(
+    moteGeo,
+    new THREE.PointsMaterial({
+      color: 0xffe2b0,
+      size: 0.055,
+      transparent: true,
+      opacity: 0,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      sizeAttenuation: true,
+    })
+  );
+  motes.userData.baseOpacity = 0.4;
+  sunRays.add(motes);
+  sunRays.userData.motes = { points: motes, base: motePos.slice(), seed: moteSeed };
+}
+scene.add(sunRays);
 
 /* ═══════════════ Lights ═══════════════ */
 
@@ -192,10 +332,10 @@ const MOODS = {
   night: {
     skyTop: new THREE.Color(0x120c1c), skyMid: new THREE.Color(0x2b1c3a), skyBot: new THREE.Color(0x4b2c48),
     stars: 0.8,
-    orb: new THREE.Color(0xdfe9f5), orbPos: new THREE.Vector3(2.8, 11, -60), // the moon, framed by the panes
+    orb: new THREE.Color(0xff8a55), orbPos: new THREE.Vector3(5.2, -7, -60), // the sun, set below the horizon
     ambient: 0.48, ambientColor: new THREE.Color(0x9c8a7a), hemi: 0.22,
     dir: new THREE.Color(0xa8c4ff), dirIntensity: 1.0, dirPos: new THREE.Vector3(8, 16, -14),
-    lampLight: 32, lampShade: 0.9, exposure: 1.0, env: 0.14, screens: 0.68,
+    lampLight: 32, lampShade: 0.9, deskLamp: 6, deskGlow: 0.9, exposure: 1.0, env: 0.14, screens: 0.68,
     bloom: 0.25, bloomThreshold: 0.88,
     wall: new THREE.Color(0x8a7266), floor: new THREE.Color(0.55, 0.44, 0.36),
     trim: new THREE.Color(0.42, 0.3, 0.22), ceil: new THREE.Color(0x6a5a4c),
@@ -206,7 +346,7 @@ const MOODS = {
     orb: new THREE.Color(0xffd489), orbPos: new THREE.Vector3(3.5, 8.5, -60), // low sun, visible through the panes
     ambient: 0.22, ambientColor: new THREE.Color(0xffd9c0), hemi: 0.14,
     dir: new THREE.Color(0xff9848), dirIntensity: 5.6, dirPos: new THREE.Vector3(4.5, 5.8, -16), // shallow golden shaft
-    lampLight: 0, lampShade: 0.05, exposure: 1.02, env: 0.15, screens: 0.78,
+    lampLight: 0, lampShade: 0.05, deskLamp: 0, deskGlow: 0.04, exposure: 1.02, env: 0.15, screens: 0.78,
     bloom: 0.5, bloomThreshold: 0.76,
     wall: new THREE.Color(0xdcc4a4), floor: new THREE.Color(1.02, 0.78, 0.56), trim: new THREE.Color(0.74, 0.5, 0.34),
     ceil: new THREE.Color(0xcdbba2),
@@ -235,6 +375,17 @@ function applyMood(k) {
   moonlight.intensity = THREE.MathUtils.lerp(n.dirIntensity, d.dirIntensity, k);
   lamp.light.intensity = THREE.MathUtils.lerp(n.lampLight, d.lampLight, k);
   lamp.shadeMat.emissiveIntensity = THREE.MathUtils.lerp(n.lampShade, d.lampShade, k);
+  refs.deskLamp.light.intensity = THREE.MathUtils.lerp(n.deskLamp, d.deskLamp, k);
+  refs.deskLamp.shadeMat.emissiveIntensity = THREE.MathUtils.lerp(n.deskGlow, d.deskGlow, k);
+  lerpC(refs.deskLamp.bulbMat.color, new THREE.Color(0xffe8c0), new THREE.Color(0x9a9088), k);
+  // Celestial swap: the sun sinks and fades while the crescent moon rises
+  orb.material.opacity = k;
+  moon.material.opacity = (1 - k) * 0.95;
+  moon.position.lerpVectors(MOON_NIGHT, MOON_DAY, k);
+  // Sun shafts, glare, and motes only live in the sunset
+  for (const child of sunRays.children) {
+    child.material.opacity = child.userData.baseOpacity * k;
+  }
   renderer.toneMappingExposure = THREE.MathUtils.lerp(n.exposure, d.exposure, k);
   lerpC(materials.wall.color, n.wall, d.wall, k);
   lerpC(materials.floor.color, n.floor, d.floor, k);
@@ -674,17 +825,20 @@ function tick() {
   // Record spins while the music plays
   if (ambience.playing) refs.radio.knobs[0].rotation.y += dt * 3.2;
 
-  // Candle flicker — layered sines read as flame, not strobe
-  {
-    const n = Math.sin(t * 11.3) * 0.5 + Math.sin(t * 17.7 + 1) * 0.3 + Math.sin(t * 29.1 + 2) * 0.2;
-    const base = 1.7 - moodMix * 1.1; // dimmer by day
-    refs.candle.light.intensity = base + n * (REDUCED_MOTION ? 0.12 : 0.4);
-    refs.candle.flame.scale.set(1 + n * 0.12, 1 + n * 0.28, 1 + n * 0.12);
+  // Dust motes drift slowly inside the sun shafts
+  if (moodMix > 0.02 && !REDUCED_MOTION) {
+    const { points, base, seed } = sunRays.userData.motes;
+    const arr = points.geometry.attributes.position.array;
+    for (let i = 0; i < seed.length; i++) {
+      arr[i * 3] = base[i * 3] + Math.sin(t * 0.3 + seed[i]) * 0.25;
+      arr[i * 3 + 1] = base[i * 3 + 1] + Math.sin(t * 0.22 + seed[i] * 1.7) * 0.18;
+    }
+    points.geometry.attributes.position.needsUpdate = true;
   }
 
-  // Day/night crossfade
+  // Day/night crossfade — unhurried, so the sun-for-moon swap reads
   if (Math.abs(moodTarget - moodMix) > 0.0008) {
-    moodMix += (moodTarget - moodMix) * Math.min(1, dt * (REDUCED_MOTION ? 20 : 2.4));
+    moodMix += (moodTarget - moodMix) * Math.min(1, dt * (REDUCED_MOTION ? 20 : 1.5));
     if (Math.abs(moodTarget - moodMix) <= 0.0008) moodMix = moodTarget;
     applyMood(moodMix);
   }
