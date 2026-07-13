@@ -175,6 +175,37 @@ function buildDesk(interactives, refs) {
   deskBooks.rotation.y = 0.5;
   desk.add(deskBooks);
 
+  // Headphones resting by the keyboard — WH-1000XM4 silhouette, hand-built
+  // to match the room (matte black, oval cups, copper ring accents)
+  const phones = new THREE.Group();
+  const hpShell = mat(0x232227, { roughness: 0.5 });
+  const hpPad = mat(0x17161a, { roughness: 0.85 });
+  const hpCopper = mat(0xb87b52, { roughness: 0.45, metalness: 0.45 });
+  const band = new THREE.Mesh(new THREE.TorusGeometry(0.17, 0.032, 10, 28, Math.PI), hpShell);
+  band.position.y = 0.11;
+  band.castShadow = true;
+  phones.add(band);
+  for (const side of [-1, 1]) {
+    const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.055, 20), hpShell);
+    cup.rotation.z = Math.PI / 2;
+    cup.rotation.y = side * 0.12; // cups angle slightly inward
+    cup.scale.z = 1.2; // oval, like the XM4
+    cup.position.set(side * 0.185, 0.1, 0);
+    cup.castShadow = true;
+    const pad = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.085, 0.03, 20), hpPad);
+    pad.rotation.z = Math.PI / 2;
+    pad.rotation.y = side * 0.12;
+    pad.scale.z = 1.2;
+    pad.position.set(side * 0.155, 0.1, 0);
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.055, 0.008, 8, 20), hpCopper);
+    ring.rotation.y = Math.PI / 2 + side * 0.12;
+    ring.position.set(side * 0.215, 0.1, 0);
+    phones.add(cup, pad, ring);
+  }
+  phones.position.set(1.35, TOP, 0.42);
+  phones.rotation.y = -0.6;
+  desk.add(phones);
+
   // Envelope — clickable → contact. The letter rises out on focus.
   const envelope = new THREE.Group();
   const paper = box(0.62, 0.04, 0.42, mat(PALETTE.cream, { roughness: 0.6 }));
