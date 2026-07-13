@@ -65,7 +65,6 @@ outline + spring) → click (focus: camera travel + object performs) → read
 - String/fairy lights — declined in Issue 7 (lean idle life chosen).
 - Balloons/chalkboard from reference — not requested; revisit with real models.
 - Real GLB room/creature models, real photos, real music — arrive later per README swap table.
-- AI mood mockups — designer needs OpenAI key; reference used as visual target instead.
 
 ## What already exists (reuse, don't rebuild)
 
@@ -80,31 +79,31 @@ outline + spring) → click (focus: camera travel + object performs) → read
 Synthesized from this review's findings. Each task derives from a specific
 finding above. Checkbox as you ship.
 
-- [ ] **T1 (P1, human: ~2d / CC: ~45min)** — interactions — Build the three-beat click choreography system
+- [ ] **T1 (P1)** — interactions — Build the three-beat click choreography system
   - Surfaced by: Pass 3 — journey steps 4–6 unsupported (hover/click/close beats)
   - Files: src/main.js, src/room.js, src/creatures.js, new src/choreography.js
   - Verify: click each of 5 objects; hover outline, camera travel, object reveal, return glide all fire
-- [ ] **T2 (P1, human: ~1d / CC: ~30min)** — content — In-scene content surfaces (1C)
+- [ ] **T2 (P1)** — content — In-scene content surfaces (1C)
   - Surfaced by: Pass 1 — flat content-reveal hierarchy, decision 1C
   - Files: src/content.js, src/room.js, new src/surfaces.js
   - Verify: projects readable on laptop screen, bio on frame, contact letter unfolds
-- [ ] **T3 (P1, human: ~1d / CC: ~40min)** — look — Storybook day look + day/night toggle + Homemade Apple accent
+- [ ] **T3 (P1)** — look — Storybook day look + day/night toggle + Homemade Apple accent
   - Surfaced by: Pass 4 — tone mismatch vs reference, decision 4C
   - Files: src/main.js, src/room.js, src/style.css, index.html
   - Verify: screenshot checkpoint approved by John before T1/T2 polish lands
-- [ ] **T4 (P2, human: ~3h / CC: ~10min)** — resilience — WebGL fallback card + prefers-reduced-motion
+- [ ] **T4 (P2)** — resilience — WebGL fallback card + prefers-reduced-motion
   - Surfaced by: Pass 2 — silent black screen, no motion preference (2A)
   - Files: index.html, src/main.js, src/style.css
   - Verify: force WebGL off → warm card renders; emulate reduced motion → no camera flights
-- [ ] **T5 (P2, human: ~4h / CC: ~15min)** — a11y — Keyboard nav + screen-reader mirror
+- [ ] **T5 (P2)** — a11y — Keyboard nav + screen-reader mirror
   - Surfaced by: Pass 6 — canvas invisible to AT (5A)
   - Files: src/main.js, index.html, src/content.js
   - Verify: Tab cycles objects with visible outline, Enter activates, VoiceOver reads content
-- [ ] **T6 (P2, human: ~3h / CC: ~15min)** — atmosphere — Candle flicker + drifting butterfly
+- [ ] **T6 (P2)** — atmosphere — Candle flicker + drifting butterfly
   - Surfaced by: Pass 3/7 — thin idle life (7A)
   - Files: src/creatures.js, src/room.js
   - Verify: candle light jitters subtly; butterfly drifts near window without stealing focus
-- [ ] **T7 (P2, human: ~1h / CC: ~5min)** — docs — DESIGN.md from today's decisions
+- [ ] **T7 (P2)** — docs — DESIGN.md from today's decisions
   - Surfaced by: Pass 5 — no design system file (TODO 1C)
   - Files: DESIGN.md
   - Verify: tokens, type, motion rules, interaction inventory all present
@@ -116,7 +115,6 @@ _No new tasks from Pass 4 beyond T3; no new tasks from Pass 6 beyond T5 (mobile 
 | Review | Trigger | Why | Runs | Status | Findings |
 |--------|---------|-----|------|--------|----------|
 | CEO Review | `/plan-ceo-review` | Scope & strategy | 0 | — | — |
-| Codex Review | `/codex review` | Independent 2nd opinion | 0 | — | codex not installed |
 | Eng Review | `/plan-eng-review` | Architecture & tests (required) | 0 | — | — |
 | Design Review | `/plan-design-review` | UI/UX gaps | 1 | issues resolved | score: 4/10 → 8/10, 9 decisions |
 | DX Review | `/plan-devex-review` | Developer experience gaps | 0 | — | — |
