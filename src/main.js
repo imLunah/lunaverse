@@ -173,8 +173,11 @@ const sunRays = new THREE.Group();
     c.width = 128;
     c.height = 512;
     const g = c.getContext("2d");
+    // Alpha eases in from the very start — a full-strength first row draws
+    // the quad's top edge as a hard line across the wall
     let gr = g.createLinearGradient(0, 0, 0, 512);
-    gr.addColorStop(0, "rgba(255,255,255,0.8)");
+    gr.addColorStop(0, "rgba(255,255,255,0)");
+    gr.addColorStop(0.09, "rgba(255,255,255,0.85)");
     gr.addColorStop(0.55, "rgba(255,255,255,0.35)");
     gr.addColorStop(1, "rgba(255,255,255,0)");
     g.fillStyle = gr;
@@ -359,15 +362,15 @@ const MOODS = {
     trim: new THREE.Color(0.42, 0.3, 0.22), ceil: new THREE.Color(0x6a5a4c),
   },
   day: {
-    skyTop: new THREE.Color(0x50619e), skyMid: new THREE.Color(0xf49a62), skyBot: new THREE.Color(0xffb070),
+    skyTop: new THREE.Color(0x46568c), skyMid: new THREE.Color(0xe8834e), skyBot: new THREE.Color(0xf29a58),
     stars: 0,
     orb: new THREE.Color(0xffd489), orbPos: new THREE.Vector3(3.5, 8.5, -60), // low sun, visible through the panes
-    ambient: 0.22, ambientColor: new THREE.Color(0xffd9c0), hemi: 0.14,
+    ambient: 0.12, ambientColor: new THREE.Color(0xffd9c0), hemi: 0.08,
     dir: new THREE.Color(0xff9848), dirIntensity: 5.6, dirPos: new THREE.Vector3(4.5, 5.8, -16), // shallow golden shaft
-    lampLight: 0, lampShade: 0.05, deskLamp: 0, deskGlow: 0.04, exposure: 1.02, env: 0.15, screens: 0.78,
+    lampLight: 0, lampShade: 0.05, deskLamp: 0, deskGlow: 0.04, exposure: 0.95, env: 0.08, screens: 0.7,
     bloom: 0.45, bloomThreshold: 0.82,
-    wall: new THREE.Color(0xdcc4a4), floor: new THREE.Color(1.02, 0.78, 0.56), trim: new THREE.Color(0.74, 0.5, 0.34),
-    ceil: new THREE.Color(0xcdbba2),
+    wall: new THREE.Color(0xbaa384), floor: new THREE.Color(0.78, 0.58, 0.42), trim: new THREE.Color(0.58, 0.4, 0.27),
+    ceil: new THREE.Color(0xa8987f),
   },
 };
 
