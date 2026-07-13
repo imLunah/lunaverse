@@ -8,6 +8,7 @@ import { buildRoom } from "./room.js";
 import { modelsReady } from "./models.js";
 import { buildOwl, buildBird } from "./creatures.js";
 import { buildSurfaces, createHello, RESUME_W, RESUME_H } from "./surfaces.js";
+import { createDesktop } from "./desktop.js";
 import { Choreography, ZONE_OF } from "./choreography.js";
 import { Ambience } from "./audio.js";
 import { CONTENT, SURFACES } from "./content.js";
@@ -400,10 +401,13 @@ surfaces.resume.offset.y = 1 - RESUME_VIEW;
 const resumeMat = new THREE.MeshBasicMaterial({ map: surfaces.resume });
 refs.laptop.screen.material = resumeMat;
 
-// Monitor = the self-writing "hello"
+// Monitor = the self-writing "hello" at rest; focusing the computer wakes
+// the little desktop OS (folders, dock, and a Notes app that takes typing)
 const hello = createHello(REDUCED_MOTION);
 const helloMat = new THREE.MeshBasicMaterial({ map: hello.texture });
 refs.monitor.screen.material = helloMat;
+const desktop = createDesktop();
+const desktopMat = new THREE.MeshBasicMaterial({ map: desktop.texture });
 
 const letterMat = new THREE.MeshBasicMaterial({ map: surfaces.letter, side: THREE.DoubleSide });
 refs.envelope.letter.material = letterMat;
@@ -414,7 +418,7 @@ refs.fashion.card.material = styleMat;
 
 // Every unlit reading surface dims with the mood — at full white they push
 // past the bloom threshold and wash out into unreadable glare
-const screenMats = [resumeMat, helloMat, letterMat, bioMat, styleMat];
+const screenMats = [resumeMat, helloMat, desktopMat, letterMat, bioMat, styleMat];
 
 /* ═══════════════ Day / night moods (decision 4C) ═══════════════ */
 
@@ -803,6 +807,13 @@ function plainText(action) {
       .join(" ");
     return `Résumé. ${r.name} — ${r.role}. ${body}`;
   }
+  if (action === "computer") {
+    const cfg = SURFACES.computer;
+    const folders = cfg.folders
+      .map((f) => `${f.name}: ` + f.items.map(([n, d]) => `${n} — ${d}`).join(". "))
+      .join(" ");
+    return `The computer. Folders on the desktop: ${folders} There is also a notes app you can type into.`;
+  }
   const s = SURFACES[action];
   if (!s) return "";
   if (action === "contact") return `${s.title}. ${s.lines.map(([l, v]) => `${l}: ${v}`).join(". ")}`;
@@ -810,6 +821,10 @@ function plainText(action) {
 }
 
 function stepBack() {
+  // leaving the computer puts the hello screensaver back on the monitor
+  if (rig.mode === "focused" && rig.action === "computer") {
+    refs.monitor.screen.material = helloMat;
+  }
   const res = rig.back(getHomePose());
   if (res === "home") srLive.textContent = "";
   return !!res;
@@ -835,6 +850,11 @@ function activateItem(action) {
       resumeScroll = 0;
       surfaces.resume.offset.y = 1 - RESUME_VIEW;
       showHint("click the screen to zoom in");
+    }
+    if (action === "computer") {
+      // the monitor wakes from its hello screensaver into the desktop
+      refs.monitor.screen.material = desktopMat;
+      showHint("open the folders · type anything · click away to leave");
     }
     srLive.textContent = plainText(action);
   }
@@ -875,6 +895,16 @@ function showHint(text) {
   clearTimeout(hintTimer);
   hintTimer = setTimeout(() => hint.classList.add("faded"), 4500);
 }
+
+// While the computer is focused, the keyboard types into its Notes app
+window.addEventListener("keydown", (e) => {
+  if (rig.mode !== "focused" || rig.action !== "computer") return;
+  if (e.key === "Escape" || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.key.length === 1 || e.key === "Backspace" || e.key === "Enter") {
+    e.preventDefault();
+    desktop.type(e.key);
+  }
+});
 
 // Résumé scrolling while the laptop is focused
 let resumeScroll = 0; // 0 = top of the page, 1 = bottom
@@ -934,6 +964,14 @@ canvas.addEventListener("click", (e) => {
   }
 
   if (rig.mode === "focused") {
+    // On the computer, clicks land on the desktop OS itself
+    if (rig.action === "computer") {
+      const hit = raycaster.intersectObject(refs.monitor.screen, false)[0];
+      if (hit && hit.uv) {
+        desktop.click(hit.uv.x, hit.uv.y);
+        return;
+      }
+    }
     // Clicking the laptop screen leans in to read; anything else steps back
     if (action === "projects" && rig.action === "projects" && zoomIntoScreen()) return;
     stepBack();
@@ -1044,8 +1082,10 @@ function tick() {
     applyMood(moodMix);
   }
 
-  // The monitor writes its "hello" over and over
+  // The monitor writes its "hello" over and over; the desktop OS blinks its
+  // caret and keeps its menu-bar clock honest
   hello.update(dt);
+  desktop.update(dt);
 
   // Owl gaze: the head follows a point a few meters out along the cursor's
   // view ray — paused while he's flying between perches

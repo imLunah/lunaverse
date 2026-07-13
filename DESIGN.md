@@ -41,7 +41,13 @@ speech bubble follow whichever perch he's on).
 
 **Desk beats:** the monitor plays a self-writing cursive "hello" (a
 hand-authored stroke path drawn on pen-style in `src/surfaces.js`, looping
-draw → hold → fade). The laptop has THREE tiers: focus flips the lid open,
+draw → hold → fade). Clicking the monitor (action "computer") wakes a little
+desktop OS (`src/desktop.js`, canvas texture in the site's own palette — an
+OS-shaped homage, not a clone): sunset wallpaper, owl menu bar with a live
+clock, desktop folders that open into windows (copy in `SURFACES.computer`),
+a dock, and a Notes app that captures real typing while focused. Clicks
+raycast onto the screen plane and map to canvas coordinates; back swaps the
+hello screensaver back in. The laptop has THREE tiers: focus flips the lid open,
 clicking the screen leans all the way in ("reading" mode, camera on the
 screen's normal), and only there does the wheel scroll the résumé
 (`texture.offset.y`; copy in `SURFACES.resume`). Back walks reading →

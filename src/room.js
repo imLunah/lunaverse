@@ -162,7 +162,10 @@ function buildDesk(interactives, refs) {
   monitor.add(mScreen);
   monitor.position.set(0.85, TOP, -0.3);
   monitor.rotation.y = -0.08;
+  // Clickable → computer: focusing wakes the little desktop OS on the screen
+  monitor.traverse((o) => (o.userData.action = "computer"));
   desk.add(monitor);
+  interactives.push({ object: monitor, action: "computer" });
   refs.monitor = { screen: mScreen };
 
   const keyboard = placeModel("computerKeyboard", { scale: 3.2 });

@@ -105,6 +105,41 @@ export const SURFACES = {
       "and designers in src/content.js.",
     ],
   },
+  // The monitor's little desktop OS (action "computer"). Folders open into
+  // windows; Notes takes whatever the visitor types.
+  computer: {
+    osName: "johnOS",
+    menus: ["File", "Edit", "View", "Go", "Help"],
+    notesTitle: "Notes",
+    notesPlaceholder: "type anything…",
+    folders: [
+      {
+        name: "Projects",
+        items: [
+          ["Project One", "A one-line description of what it does and why it's neat."],
+          ["Project Two", "Another placeholder. Link it to a repo or live demo."],
+          ["Project Three", "The third slot. Three is a nice number."],
+        ],
+      },
+      {
+        name: "About Me",
+        items: [
+          ["Hey, I'm John", "I build warm, playful things for the web."],
+          ["Also", "Avant-garde fashion, owls, golden-hour light."],
+          ["This copy", "Placeholder — swap it in src/content.js."],
+        ],
+      },
+      {
+        name: "Owl Pics",
+        items: [
+          ["ollie_sleeping.png", "🦉 on the pillow again"],
+          ["ollie_judging.png", "🦉 watching me code"],
+          ["ollie_hoo.png", "🦉 mid-hoo, blurry"],
+        ],
+      },
+    ],
+  },
+
   // Ollie, the windowsill owl. One line per click, in order, then it loops.
   owl: {
     name: "Ollie",

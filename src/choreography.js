@@ -21,13 +21,15 @@ const ZONES = {
   fashion: { pos: new THREE.Vector3(2.3, 2.4, 2.2), target: new THREE.Vector3(4.4, 1.35, 2.7) },
 };
 
-export const ZONE_OF = { projects: "desk", contact: "desk", about: "gallery", radio: "music", style: "fashion" };
+export const ZONE_OF = { projects: "desk", contact: "desk", computer: "desk", about: "gallery", radio: "music", style: "fashion" };
 
 // Close-up item poses within a zone
 const FOCUS = {
   // The laptop's open lid tilts back ~22°, so the camera sits high, along its normal
   projects: { pos: new THREE.Vector3(-2.65, 2.9, -1.65), target: new THREE.Vector3(-3.1, 2.1, -3.55) },
   contact: { pos: new THREE.Vector3(-2.15, 2.55, -1.2), target: new THREE.Vector3(-2.15, 2.0, -2.75) },
+  // Straight down the monitor screen's normal so the desktop OS fills the view
+  computer: { pos: new THREE.Vector3(-1.45, 2.42, -2.55), target: new THREE.Vector3(-1.35, 2.26, -3.59) },
   // Aimed between the frame (z -2) and where the bio card slides out (z ~-1.35)
   about: { pos: new THREE.Vector3(-2.85, 3.4, -1.62), target: new THREE.Vector3(-4.6, 3.3, -1.62) },
   style: { pos: new THREE.Vector3(3.0, 1.8, 2.3), target: new THREE.Vector3(4.5, 1.5, 2.7) },
