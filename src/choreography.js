@@ -27,7 +27,8 @@ export const ZONE_OF = { projects: "desk", contact: "desk", computer: "desk", ab
 const FOCUS = {
   // The laptop's open lid tilts back ~22°, so the camera sits high, along its normal
   projects: { pos: new THREE.Vector3(-2.65, 2.9, -1.65), target: new THREE.Vector3(-3.1, 2.1, -3.55) },
-  contact: { pos: new THREE.Vector3(-2.15, 2.55, -1.2), target: new THREE.Vector3(-2.15, 2.0, -2.75) },
+  // The envelope now stands by the monitor's left side
+  contact: { pos: new THREE.Vector3(-2.0, 2.5, -1.7), target: new THREE.Vector3(-1.96, 2.0, -3.44) },
   // Straight down the monitor screen's normal so the desktop OS fills the view
   computer: { pos: new THREE.Vector3(-1.45, 2.42, -2.55), target: new THREE.Vector3(-1.35, 2.26, -3.59) },
   // Aimed between the frame (z -2) and where the bio card slides out (z ~-1.35)

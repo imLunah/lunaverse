@@ -178,25 +178,47 @@ function buildDesk(interactives, refs) {
   deskBooks.rotation.y = 0.5;
   desk.add(deskBooks);
 
-  // Envelope — clickable → contact. The letter rises out on focus.
+  // Envelope — clickable → contact. Stands leaning by the monitor, looking
+  // like actual mail: flap seams meeting at the wax seal. The letter rises
+  // out on focus.
   const envelope = new THREE.Group();
-  const paper = box(0.62, 0.04, 0.42, mat(PALETTE.cream, { roughness: 0.6 }));
-  const seal = new THREE.Mesh(new THREE.CircleGeometry(0.07, 20), new THREE.MeshBasicMaterial({ color: PALETTE.ember }));
-  seal.rotation.x = -Math.PI / 2;
-  seal.position.y = 0.025;
+  const envMat = mat(PALETTE.cream, { roughness: 0.6 });
+  const envBody = box(0.5, 0.34, 0.035, envMat, 0, 0.17, 0);
+  const seamMat = mat(0xdcc9a6, { roughness: 0.7 });
+  for (const side of [-1, 1]) {
+    const seam = box(0.31, 0.014, 0.012, seamMat, side * 0.125, 0.255, 0.017);
+    seam.rotation.z = -side * 0.6;
+    envelope.add(seam);
+  }
+  const seal = new THREE.Mesh(new THREE.CircleGeometry(0.05, 20), new THREE.MeshBasicMaterial({ color: PALETTE.ember }));
+  seal.position.set(0, 0.17, 0.024);
   const letter = new THREE.Mesh(
     new THREE.PlaneGeometry(0.52, 0.7),
     new THREE.MeshBasicMaterial({ color: PALETTE.cream, side: THREE.DoubleSide })
   );
   letter.scale.setScalar(0.001);
   letter.position.set(0, 0.05, 0);
-  envelope.add(paper, seal, letter);
-  envelope.position.set(0.05, TOP, 0.55);
-  envelope.rotation.y = -0.35;
+  envelope.add(envBody, seal, letter);
+  envelope.position.set(0.24, TOP, -0.14); // tucked against the monitor's left side
+  envelope.rotation.y = 0.3;
+  envelope.rotation.x = -0.12; // leaning back
   envelope.traverse((o) => (o.userData.action = "contact"));
   desk.add(envelope);
   interactives.push({ object: envelope, action: "contact" });
   refs.envelope = { letter };
+
+  // Mouse pad + mouse to the right of the keyboard — the computer earns them
+  const mousePad = new THREE.Mesh(new THREE.CylinderGeometry(0.21, 0.21, 0.014, 28), fabricMat(0x3a3a45));
+  mousePad.position.set(1.32, TOP + 0.007, 0.42);
+  mousePad.receiveShadow = true;
+  desk.add(mousePad);
+  const mouse = new THREE.Group();
+  const mouseBody = box(0.11, 0.055, 0.17, mat(0xd9cfc0, { roughness: 0.45 }), 0, 0.028, 0);
+  const mouseSeam = box(0.012, 0.02, 0.06, mat(0x8a8078, { roughness: 0.5 }), 0, 0.052, -0.045);
+  mouse.add(mouseBody, mouseSeam);
+  mouse.position.set(1.32, TOP + 0.014, 0.44);
+  mouse.rotation.y = -0.35;
+  desk.add(mouse);
 
   return desk;
 }
