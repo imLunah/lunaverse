@@ -315,12 +315,12 @@ const progressTimer = setInterval(() => {
 let entering = false;
 let enterT = 0;
 
+// No autoplay — the record player starts the music when the visitor asks
+// (observed: even the site's author muted the auto-start on every load)
 enterBtn.addEventListener("click", () => {
   loader.classList.add("hidden");
   document.body.classList.add("entered");
   entering = true;
-  ambience.start();
-  muteBtn.classList.remove("muted");
 });
 
 muteBtn.addEventListener("click", () => {
