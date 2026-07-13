@@ -118,6 +118,13 @@ export const SURFACES = {
       "The robin out there never stops to chat.",
       "Okay, back to supervising.",
     ],
+    // Clicked while sleeping through the sunset (owls work nights)
+    sleepy: [
+      "Zzz…",
+      "…hoo? Zzz.",
+      "Owl hours are night hours. Zzz…",
+      "…five more minutes of sunset.",
+    ],
   },
 };
 

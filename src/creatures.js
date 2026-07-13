@@ -24,31 +24,35 @@ export function buildOwl({ scale = 1, accent = 0xd96f43 } = {}) {
   belly.position.set(0, -0.08, 0.18);
   owl.add(belly);
 
-  // Eye discs + pupils (pupils scale to blink and slide to follow the cursor)
+  // The face lives in a head group pivoted at the body's center — real owls
+  // turn the whole face, so the features sweep around the round body together
+  const head = new THREE.Group();
+  owl.add(head);
+
+  // Eye discs + pupils (pupils scale to blink and shut while asleep)
   const pupils = [];
   for (const side of [-1, 1]) {
     const disc = new THREE.Mesh(new THREE.SphereGeometry(0.15, 16, 12), std(0xf3e5c8));
     disc.scale.set(1, 1, 0.5);
     disc.position.set(side * 0.16, 0.22, 0.32);
-    owl.add(disc);
+    head.add(disc);
     const pupil = new THREE.Mesh(new THREE.SphereGeometry(0.06, 10, 8), std(0x241b2f, { roughness: 0.4 }));
     pupil.position.set(side * 0.16, 0.22, 0.44);
-    pupil.userData.base = pupil.position.clone();
-    owl.add(pupil);
+    head.add(pupil);
     pupils.push(pupil);
   }
 
   const beak = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.14, 6), std(accent, { roughness: 0.6 }));
   beak.rotation.x = Math.PI / 2;
   beak.position.set(0, 0.1, 0.44);
-  owl.add(beak);
+  head.add(beak);
 
   // Ear tufts
   for (const side of [-1, 1]) {
     const tuft = new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.22, 6), std(0x6e4a30));
     tuft.position.set(side * 0.24, 0.55, 0.05);
     tuft.rotation.z = -side * 0.35;
-    owl.add(tuft);
+    head.add(tuft);
   }
 
   // Wings (kept for the flap performance)
@@ -77,11 +81,14 @@ export function buildOwl({ scale = 1, accent = 0xd96f43 } = {}) {
   let blinkT = -1;
   const baseY = pupils[0].scale.y;
 
-  // Cursor gaze: main.js feeds a world-space point; pupils drift toward it
+  // Cursor gaze: main.js feeds a world-space point; the whole head turns
   const gaze = new THREE.Vector3();
   let hasGaze = false;
   const _local = new THREE.Vector3();
-  const _dir = new THREE.Vector3();
+
+  // Sleep: 0 awake … 1 asleep (main.js feeds the day mix — owls sleep by day)
+  let sleepTarget = 0;
+  let sleepK = 0;
 
   function setLookTarget(worldPoint) {
     if (worldPoint) {
@@ -92,43 +99,50 @@ export function buildOwl({ scale = 1, accent = 0xd96f43 } = {}) {
     }
   }
 
+  function setSleep(v) {
+    sleepTarget = THREE.MathUtils.clamp(v, 0, 1);
+  }
+
   function update(t, dt) {
-    // gentle breathing
-    body.scale.y = 1.2 + Math.sin(t * 1.6) * 0.02;
-    // head-ish sway
-    owl.rotation.y = Math.sin(t * 0.4) * 0.12;
-    // pupils track the cursor (or drift home when it leaves)
-    for (const p of pupils) {
-      const base = p.userData.base;
-      let tx = base.x, ty = base.y;
-      if (hasGaze) {
-        _local.copy(gaze);
-        owl.worldToLocal(_local);
-        _dir.copy(_local).sub(base);
-        if (_dir.z < 0.2) _dir.z = 0.2; // never look backwards through the head
-        _dir.normalize();
-        tx = base.x + _dir.x * 0.055;
-        ty = base.y + _dir.y * 0.05;
-      }
-      const k = Math.min(1, dt * 10);
-      p.position.x += (tx - p.position.x) * k;
-      p.position.y += (ty - p.position.y) * k;
+    sleepK += (sleepTarget - sleepK) * Math.min(1, dt * 1.8);
+    // breathing: slower and deeper while asleep
+    body.scale.y = 1.2 + Math.sin(t * (1.6 - 0.9 * sleepK)) * (0.02 + 0.02 * sleepK);
+    // gentle body sway, settling when asleep
+    owl.rotation.y = Math.sin(t * 0.4) * 0.12 * (1 - 0.6 * sleepK);
+
+    // Head tracking — the face swivels toward the cursor like a real owl
+    let ty = 0;
+    let tx = 0;
+    if (hasGaze && sleepK < 0.95) {
+      _local.copy(gaze);
+      owl.worldToLocal(_local);
+      const dx = _local.x, dy = _local.y - 0.25, dz = _local.z;
+      const awake = 1 - sleepK;
+      ty = THREE.MathUtils.clamp(Math.atan2(dx, dz), -1.1, 1.1) * awake;
+      tx = THREE.MathUtils.clamp(-Math.atan2(dy, Math.hypot(dx, dz)), -0.35, 0.3) * awake;
     }
-    // blinking
+    tx += 0.38 * sleepK; // asleep: face tucked down into the chest
+    const hk = Math.min(1, dt * 6);
+    head.rotation.y += (ty - head.rotation.y) * hk;
+    head.rotation.x += (tx - head.rotation.x) * hk;
+
+    // Blinking (only while awake) + eyelids shut as sleep sets in
     nextBlink -= dt;
-    if (nextBlink <= 0 && blinkT < 0) {
+    if (nextBlink <= 0 && blinkT < 0 && sleepK < 0.5) {
       blinkT = 0;
       nextBlink = 2.5 + Math.random() * 4;
     }
+    let blinkS = 1;
     if (blinkT >= 0) {
       blinkT += dt * 9;
-      const s = blinkT < 1 ? 1 - blinkT : blinkT - 1; // down then up
-      pupils.forEach((p) => p.scale.setY(Math.max(0.05, baseY * s)));
+      blinkS = blinkT < 1 ? 1 - blinkT : blinkT - 1; // down then up
       if (blinkT >= 2) blinkT = -1;
     }
+    const open = blinkS * (1 - 0.94 * sleepK);
+    pupils.forEach((p) => p.scale.setY(Math.max(0.05, baseY * open)));
   }
 
-  return { group: owl, update, wings, body, setLookTarget };
+  return { group: owl, update, wings, body, setLookTarget, setSleep };
 }
 
 /** A tiny robin that orbits a point (outside the window). Returns { group, update(t) } */

@@ -29,8 +29,10 @@ materials). The laptop is hand-built (its lid hinges open — GLBs can't do
 that), as are the record player, envelope, photo frame, fashion corner,
 window, shelves, and creatures — they carry the animations. The bookshelf owl
 is retired; Ollie now lives on the windowsill: clicking him hoots, flaps, and
-shows a dialogue bubble (lines cycle from `content.js`), and his pupils track
-the cursor.
+shows a dialogue bubble (lines cycle from `content.js`), and his whole FACE
+swivels to follow the cursor, the way real owls turn their heads. He keeps
+owl hours: asleep through the sunset (face tucked, eyes shut, slow breathing —
+clicks get sleepy murmurs from `SURFACES.owl.sleepy`), awake all night.
 
 **Desk beats:** the monitor plays a self-writing cursive "hello" (a
 hand-authored stroke path drawn on pen-style in `src/surfaces.js`, looping

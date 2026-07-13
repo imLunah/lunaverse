@@ -727,11 +727,19 @@ function zoomIntoScreen() {
   return true;
 }
 
-/** The owl performs from its sill: a hoot, a flap, a line of dialogue. */
+/** The owl performs from its sill: a hoot, a flap, a line of dialogue.
+    Asleep through the sunset (owls work nights), he only stirs and murmurs. */
 let owlPerfT = -1;
 let owlLineIdx = 0;
 function performOwl() {
   markInteracted();
+  const asleep = moodMix > 0.6;
+  if (asleep) {
+    const line = SURFACES.owl.sleepy[owlLineIdx++ % SURFACES.owl.sleepy.length];
+    owlSay(line);
+    srLive.textContent = `${SURFACES.owl.name} the owl is asleep: ${line}`;
+    return;
+  }
   ambience.hoot();
   owlPerfT = 0;
   const line = SURFACES.owl.lines[owlLineIdx++ % SURFACES.owl.lines.length];
@@ -915,6 +923,7 @@ function tick() {
     smallOwl.setLookTarget(null);
   }
 
+  smallOwl.setSleep(moodMix); // owls work nights: asleep through the sunset
   smallOwl.update(t + 5, dt);
   bird.update(t);
 
