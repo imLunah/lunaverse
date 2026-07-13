@@ -58,8 +58,9 @@ threshold drops), unlit screens dim so they never read as lamps. Visible sun
 RAYS pour through the window as a world-space light volume — the window
 opening extruded along the sun direction as a prism mesh with a streaked
 additive gradient (never billboarded sheets: those slide over the frame and
-walls as the camera moves) — plus a glare sprite over the glass and dust
-motes drifting in the beam; all fade with the mood. Night is the lamp-lit cabin (floor lamp
+walls as the camera moves) — plus dust motes drifting in the beam; all fade
+with the mood. No glare sprite: its halo bled onto the wall, and the sun
+disc's bloom carries the glow on its own. Night is the lamp-lit cabin (floor lamp
 + desk lamp on) with a crescent moon framed in the window. The toggle is a
 slow celestial swap: the sun sinks below the horizon and reddens while the
 crescent rises into the panes. Texture grade is stylized-clean (normal maps

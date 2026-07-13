@@ -247,29 +247,6 @@ const sunRays = new THREE.Group();
   prism.userData.baseOpacity = 0.42;
   sunRays.add(prism);
 
-  // Glare blob over the glass — the blown-out window read
-  const glareTex = (() => {
-    const c = document.createElement("canvas");
-    c.width = c.height = 256;
-    const g = c.getContext("2d");
-    const gr = g.createRadialGradient(128, 128, 10, 128, 128, 128);
-    gr.addColorStop(0, "rgba(255,244,220,0.95)");
-    gr.addColorStop(0.4, "rgba(255,224,170,0.5)");
-    gr.addColorStop(1, "rgba(255,224,170,0)");
-    g.fillStyle = gr;
-    g.fillRect(0, 0, 256, 256);
-    return new THREE.CanvasTexture(c);
-  })();
-  const glare = new THREE.Sprite(
-    new THREE.SpriteMaterial({ map: glareTex, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false })
-  );
-  // In front of the wall's inner face and the curtains — behind them, the
-  // room geometry depth-clips the billboard into hard edges as the camera moves
-  glare.userData.baseOpacity = 0.3;
-  glare.scale.set(4.4, 3.5, 1);
-  glare.position.set(1.4, 3.2, -4.05);
-  sunRays.add(glare);
-
   // Dust motes drifting in the beam
   const MOTES = 42;
   const motePos = new Float32Array(MOTES * 3);
