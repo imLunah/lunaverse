@@ -21,6 +21,14 @@ cream/tan bedding + one rust cushion, suitcase record player on a bench
 shelves with books/alarm-clock/mug, hanging pothos, skateboard, office chair.
 Room is a compact 10×9 m — dense and snug like the reference; everything within a few steps.
 
+**Models:** core furniture (desk, laptop, monitor, keyboard, office chair, bed,
+bookcase, potted plants, book stacks) are Kenney Furniture Kit GLBs (CC0, no
+attribution required — License.txt kept in `public/models/furniture/`), placed
+via `src/models.js` (auto-grounds each model; `modelsReady()` refreshes hover
+materials). Record player, envelope, photo frame, fashion corner, window,
+shelves, and creatures stay hand-built — they carry the animations. The
+bookshelf owl (Ollie) is retired; the windowsill owl, robin, and butterfly stay.
+
 **Fashion corner (John is into avant-garde fashion):** garment rack with
 sculptural monochrome pieces (black/cream/rust/charcoal), dress form with an
 angular cape, statement boots, fashion book stack, full-length mirror.
