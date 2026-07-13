@@ -462,6 +462,31 @@ const owlBubble = (() => {
   return { ctx: c.getContext("2d"), tex, sprite, t: -1 };
 })();
 
+// Zzz's drift up from Ollie while he sleeps through the sunset
+const zzzSprites = [];
+const zzzBase = smallOwl.group.position.clone().add(new THREE.Vector3(0.22, 0.4, 0.18));
+{
+  const c = document.createElement("canvas");
+  c.width = c.height = 128;
+  const g = c.getContext("2d");
+  g.font = "italic 700 92px Georgia, serif";
+  g.textAlign = "center";
+  g.textBaseline = "middle";
+  g.fillStyle = "#4a3a2e";
+  g.fillText("z", 64, 68);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  for (let i = 0; i < 3; i++) {
+    const s = new THREE.Sprite(
+      new THREE.SpriteMaterial({ map: tex, transparent: true, opacity: 0, depthWrite: false })
+    );
+    s.userData.phase = i * 0.66;
+    s.position.copy(zzzBase);
+    scene.add(s);
+    zzzSprites.push(s);
+  }
+}
+
 function owlSay(line) {
   const g = owlBubble.ctx;
   const W = 512, H = 224;
@@ -926,6 +951,18 @@ function tick() {
   smallOwl.setSleep(moodMix); // owls work nights: asleep through the sunset
   smallOwl.update(t + 5, dt);
   bird.update(t);
+
+  // Zzz's rise and fade in a loop while the owl sleeps
+  {
+    const speed = REDUCED_MOTION ? 0.12 : 0.4;
+    for (const s of zzzSprites) {
+      const cycle = (t * speed + s.userData.phase) % 2;
+      s.position.set(zzzBase.x + cycle * 0.17, zzzBase.y + cycle * 0.42, zzzBase.z);
+      const size = 0.13 + cycle * 0.09;
+      s.scale.set(size, size, 1);
+      s.material.opacity = moodMix * Math.sin((Math.PI * cycle) / 2) * 0.9;
+    }
+  }
 
   // Owl performance: a bounce and a wing flap after a click (post-update so it wins)
   if (owlPerfT >= 0) {

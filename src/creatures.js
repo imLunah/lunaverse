@@ -29,13 +29,16 @@ export function buildOwl({ scale = 1, accent = 0xd96f43 } = {}) {
   const head = new THREE.Group();
   owl.add(head);
 
-  // Eye discs + pupils (pupils scale to blink and shut while asleep)
+  // Eye discs + pupils — both squash vertically to blink, and close to a
+  // slit while asleep (shrinking only the pupils leaves blank staring eyes)
   const pupils = [];
+  const eyeDiscs = [];
   for (const side of [-1, 1]) {
     const disc = new THREE.Mesh(new THREE.SphereGeometry(0.15, 16, 12), std(0xf3e5c8));
     disc.scale.set(1, 1, 0.5);
     disc.position.set(side * 0.16, 0.22, 0.32);
     head.add(disc);
+    eyeDiscs.push(disc);
     const pupil = new THREE.Mesh(new THREE.SphereGeometry(0.06, 10, 8), std(0x241b2f, { roughness: 0.4 }));
     pupil.position.set(side * 0.16, 0.22, 0.44);
     head.add(pupil);
@@ -140,6 +143,7 @@ export function buildOwl({ scale = 1, accent = 0xd96f43 } = {}) {
     }
     const open = blinkS * (1 - 0.94 * sleepK);
     pupils.forEach((p) => p.scale.setY(Math.max(0.05, baseY * open)));
+    eyeDiscs.forEach((d) => d.scale.setY(Math.max(0.1, open)));
   }
 
   return { group: owl, update, wings, body, setLookTarget, setSleep };
