@@ -32,7 +32,12 @@ is retired; Ollie now lives on the windowsill: clicking him hoots, flaps, and
 shows a dialogue bubble (lines cycle from `content.js`), and his whole FACE
 swivels to follow the cursor, the way real owls turn their heads. He keeps
 owl hours: asleep through the sunset (face tucked, eyes shut, slow breathing —
-clicks get sleepy murmurs from `SURFACES.owl.sleepy`), awake all night.
+clicks get sleepy murmurs from `SURFACES.owl.sleepy`), awake all night. He
+keeps TWO perches: by day he naps curled on the bed's left pillow; at night
+he's up on the windowsill. The day/night toggle sends him flying between
+them — a 1.8 s wing-flapping bezier arc timed inside the mood crossfade
+(instant swap under reduced motion; clicks ignored mid-flight; the Zzz's and
+speech bubble follow whichever perch he's on).
 
 **Desk beats:** the monitor plays a self-writing cursive "hello" (a
 hand-authored stroke path drawn on pen-style in `src/surfaces.js`, looping

@@ -436,14 +436,45 @@ let moodMix = 1;
 let moodTarget = 1;
 
 
-// Small owl on the windowsill — clickable: it hoots and says a line, and its
-// eyes track the cursor from the sill (see the gaze block in tick)
+// Ollie — clickable: he hoots and says a line, and his face tracks the cursor.
+// He keeps two perches: the windowsill at night (awake) and the bed's pillows
+// by day (asleep). The day/night toggle sends him flying between them.
+const OWL_SPOTS = {
+  sill: { pos: new THREE.Vector3(windowWorldPos.x - 0.7, windowWorldPos.y - 1.05, windowWorldPos.z + 0.35), yaw: -0.4 },
+  bed: { pos: new THREE.Vector3(2.7, 1.05, -3.45), yaw: -0.5 }, // on the left pillow (top measured from the GLB)
+};
 const smallOwl = buildOwl({ scale: 0.5, accent: 0xf0a35e });
-smallOwl.group.position.set(windowWorldPos.x - 0.7, windowWorldPos.y - 1.05, windowWorldPos.z + 0.35);
-smallOwl.group.rotation.y = -0.4;
+// Day is the default mood, so he starts asleep on the bed — no flight on load
+smallOwl.group.position.copy(OWL_SPOTS.bed.pos);
+smallOwl.group.userData.baseYaw = OWL_SPOTS.bed.yaw;
 smallOwl.group.traverse((o) => (o.userData.action = "owl"));
 scene.add(smallOwl.group);
 interactives.push({ object: smallOwl.group, action: "owl" });
+
+// Flight between perches: quadratic bezier through a raised midpoint
+const owlFlight = {
+  t: -1, // -1 idle, 0..1 flying
+  landT: -1,
+  dur: 1.8,
+  from: new THREE.Vector3(),
+  mid: new THREE.Vector3(),
+  to: new THREE.Vector3(),
+  toYaw: 0,
+};
+function owlFlyTo(spot) {
+  const dest = OWL_SPOTS[spot];
+  if (REDUCED_MOTION) {
+    smallOwl.group.position.copy(dest.pos);
+    smallOwl.group.userData.baseYaw = dest.yaw;
+    return;
+  }
+  owlFlight.from.copy(smallOwl.group.position); // retargets cleanly mid-flight
+  owlFlight.to.copy(dest.pos);
+  owlFlight.mid.lerpVectors(owlFlight.from, owlFlight.to, 0.5).add(new THREE.Vector3(0, 0.9, 0.45));
+  owlFlight.toYaw = dest.yaw;
+  owlFlight.t = 0;
+  owlFlight.landT = -1;
+}
 
 // Speech bubble sprite above the owl
 const owlBubble = (() => {
@@ -464,7 +495,7 @@ const owlBubble = (() => {
 
 // Zzz's drift up from Ollie while he sleeps through the sunset
 const zzzSprites = [];
-const zzzBase = smallOwl.group.position.clone().add(new THREE.Vector3(0.22, 0.4, 0.18));
+const ZZZ_OFFSET = new THREE.Vector3(0.22, 0.4, 0.18); // from his current perch
 {
   const c = document.createElement("canvas");
   c.width = c.height = 128;
@@ -481,13 +512,15 @@ const zzzBase = smallOwl.group.position.clone().add(new THREE.Vector3(0.22, 0.4,
       new THREE.SpriteMaterial({ map: tex, transparent: true, opacity: 0, depthWrite: false })
     );
     s.userData.phase = i * 0.66;
-    s.position.copy(zzzBase);
+    s.position.copy(smallOwl.group.position).add(ZZZ_OFFSET);
     scene.add(s);
     zzzSprites.push(s);
   }
 }
 
 function owlSay(line) {
+  // the bubble follows him to whichever perch he's on
+  owlBubble.sprite.position.copy(smallOwl.group.position).add(new THREE.Vector3(0.15, 0.85, 0.25));
   const g = owlBubble.ctx;
   const W = 512, H = 224;
   g.clearRect(0, 0, W, H);
@@ -616,6 +649,8 @@ dayNightBtn.addEventListener("click", () => {
   moodTarget = moodTarget > 0.5 ? 0 : 1;
   document.body.classList.toggle("day", moodTarget > 0.5);
   dayNightBtn.setAttribute("aria-pressed", String(moodTarget > 0.5));
+  // Ollie relocates with the light: bed for the day's nap, sill for the night
+  owlFlyTo(moodTarget > 0.5 ? "bed" : "sill");
 });
 
 function openModal(key) {
@@ -757,6 +792,7 @@ function zoomIntoScreen() {
 let owlPerfT = -1;
 let owlLineIdx = 0;
 function performOwl() {
+  if (owlFlight.t >= 0) return; // mid-flight — let him land first
   markInteracted();
   const asleep = moodMix > 0.6;
   if (asleep) {
@@ -877,6 +913,8 @@ const clock = new THREE.Clock();
 const _lookDir = new THREE.Vector3();
 const _lookTarget = new THREE.Vector3();
 const _gaze = new THREE.Vector3();
+const _owlA = new THREE.Vector3();
+const _owlB = new THREE.Vector3();
 const _homePose = { pos: new THREE.Vector3(), dir: new THREE.Vector3() };
 
 function tick() {
@@ -938,9 +976,9 @@ function tick() {
   // The monitor writes its "hello" over and over
   hello.update(dt);
 
-  // Owl gaze: pupils follow a point a few meters out along the cursor's view
-  // ray (unprojected NDC alone sits at the camera and reads as no movement)
-  if (pointer.x >= -1 && pointer.x <= 1 && pointer.y >= -1 && pointer.y <= 1) {
+  // Owl gaze: the head follows a point a few meters out along the cursor's
+  // view ray — paused while he's flying between perches
+  if (owlFlight.t < 0 && pointer.x >= -1 && pointer.x <= 1 && pointer.y >= -1 && pointer.y <= 1) {
     _gaze.set(pointer.x, pointer.y, 0.5).unproject(camera).sub(camera.position).normalize();
     _gaze.multiplyScalar(7).add(camera.position);
     smallOwl.setLookTarget(_gaze);
@@ -948,19 +986,60 @@ function tick() {
     smallOwl.setLookTarget(null);
   }
 
-  smallOwl.setSleep(moodMix); // owls work nights: asleep through the sunset
+  // Flight between perches — quadratic bezier, wings flapping, yaw following
+  // the travel direction before easing onto the landing yaw
+  if (owlFlight.t >= 0) {
+    owlFlight.t += dt / owlFlight.dur;
+    const p = Math.min(owlFlight.t, 1);
+    const e = p * p * (3 - 2 * p); // smoothstep
+    _owlA.lerpVectors(owlFlight.from, owlFlight.mid, e);
+    _owlB.lerpVectors(owlFlight.mid, owlFlight.to, e);
+    const prevX = smallOwl.group.position.x, prevZ = smallOwl.group.position.z;
+    smallOwl.group.position.lerpVectors(_owlA, _owlB, e);
+    const dx = smallOwl.group.position.x - prevX, dz = smallOwl.group.position.z - prevZ;
+    if (dx * dx + dz * dz > 1e-8) {
+      const travelYaw = Math.atan2(dx, dz);
+      smallOwl.group.userData.baseYaw =
+        p < 0.75 ? travelYaw : THREE.MathUtils.lerp(travelYaw, owlFlight.toYaw, (p - 0.75) / 0.25);
+    }
+    const flap = Math.abs(Math.sin(p * Math.PI * 7)) * (1 - Math.abs(p - 0.5) * 1.2);
+    for (const w of smallOwl.wings) w.rotation.z = w.userData.side * (0.25 + flap * 1.15);
+    if (p >= 1) {
+      owlFlight.t = -1;
+      owlFlight.landT = 0;
+      smallOwl.group.userData.baseYaw = owlFlight.toYaw;
+      for (const w of smallOwl.wings) w.rotation.z = w.userData.side * 0.25;
+    }
+  }
+  // Landing settle: one soft squash
+  if (owlFlight.landT >= 0) {
+    owlFlight.landT += dt / 0.45;
+    const q = Math.min(owlFlight.landT, 1);
+    const squash = Math.sin(q * Math.PI) * 0.12;
+    smallOwl.group.scale.set(0.5 * (1 + squash * 0.6), 0.5 * (1 - squash), 0.5 * (1 + squash * 0.6));
+    if (q >= 1) {
+      owlFlight.landT = -1;
+      smallOwl.group.scale.setScalar(0.5);
+    }
+  }
+
+  // Owls work nights: asleep through the sunset — but never mid-flight
+  smallOwl.setSleep(owlFlight.t >= 0 ? 0 : moodMix);
   smallOwl.update(t + 5, dt);
   bird.update(t);
 
-  // Zzz's rise and fade in a loop while the owl sleeps
+  // Zzz's rise and fade in a loop while the owl sleeps — anchored to whichever
+  // perch he's on, and held back until he's actually landed
   {
     const speed = REDUCED_MOTION ? 0.12 : 0.4;
+    const op = smallOwl.group.position;
+    const grounded = owlFlight.t < 0 ? 1 : 0;
     for (const s of zzzSprites) {
       const cycle = (t * speed + s.userData.phase) % 2;
-      s.position.set(zzzBase.x + cycle * 0.17, zzzBase.y + cycle * 0.42, zzzBase.z);
+      s.position.set(op.x + ZZZ_OFFSET.x + cycle * 0.17, op.y + ZZZ_OFFSET.y + cycle * 0.42, op.z + ZZZ_OFFSET.z);
       const size = 0.13 + cycle * 0.09;
       s.scale.set(size, size, 1);
-      s.material.opacity = moodMix * Math.sin((Math.PI * cycle) / 2) * 0.9;
+      s.material.opacity = moodMix * grounded * Math.sin((Math.PI * cycle) / 2) * 0.9;
     }
   }
 

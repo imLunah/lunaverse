@@ -110,8 +110,8 @@ export function buildOwl({ scale = 1, accent = 0xd96f43 } = {}) {
     sleepK += (sleepTarget - sleepK) * Math.min(1, dt * 1.8);
     // breathing: slower and deeper while asleep
     body.scale.y = 1.2 + Math.sin(t * (1.6 - 0.9 * sleepK)) * (0.02 + 0.02 * sleepK);
-    // gentle body sway, settling when asleep
-    owl.rotation.y = Math.sin(t * 0.4) * 0.12 * (1 - 0.6 * sleepK);
+    // gentle body sway around the perch's base yaw, settling when asleep
+    owl.rotation.y = (owl.userData.baseYaw || 0) + Math.sin(t * 0.4) * 0.12 * (1 - 0.6 * sleepK);
 
     // Head tracking — the face swivels toward the cursor like a real owl
     let ty = 0;
