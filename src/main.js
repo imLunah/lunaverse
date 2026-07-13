@@ -7,7 +7,7 @@ import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 import { buildRoom } from "./room.js";
 import { modelsReady } from "./models.js";
 import { buildOwl, buildBird, buildButterfly } from "./creatures.js";
-import { buildSurfaces } from "./surfaces.js";
+import { buildSurfaces, createHello, RESUME_W, RESUME_H } from "./surfaces.js";
 import { Choreography, ZONE_OF } from "./choreography.js";
 import { Ambience } from "./audio.js";
 import { CONTENT, SURFACES } from "./content.js";
@@ -162,7 +162,23 @@ scene.add(room);
 
 // In-scene content surfaces (decision 1C)
 const surfaces = buildSurfaces();
-refs.laptop.screen.material = new THREE.MeshBasicMaterial({ map: surfaces.screen });
+
+// Laptop screen = résumé: the plane shows a window of the tall canvas and
+// wheel input slides texture.offset.y while the laptop is focused
+const RESUME_VIEW = (RESUME_W * (0.64 / 1.02)) / RESUME_H; // plane is 1.02×0.64
+surfaces.resume.repeat.set(1, RESUME_VIEW);
+surfaces.resume.offset.y = 1 - RESUME_VIEW;
+const resumeMat = new THREE.MeshBasicMaterial({ map: surfaces.resume });
+refs.laptop.screen.material = resumeMat;
+
+// Monitor = the self-writing "hello"
+const hello = createHello(REDUCED_MOTION);
+const helloMat = new THREE.MeshBasicMaterial({ map: hello.texture });
+refs.monitor.screen.material = helloMat;
+
+// Screens are unlit materials — dim them after dark or they bloom into glare
+const screenMats = [resumeMat, helloMat];
+
 refs.envelope.letter.material = new THREE.MeshBasicMaterial({ map: surfaces.letter, side: THREE.DoubleSide });
 refs.photo.bioPanel.material = new THREE.MeshBasicMaterial({ map: surfaces.bio, side: THREE.DoubleSide });
 refs.fashion.card.material = new THREE.MeshBasicMaterial({ map: surfaces.style, side: THREE.DoubleSide });
@@ -176,9 +192,9 @@ const MOODS = {
     skyTop: new THREE.Color(0x120c1c), skyMid: new THREE.Color(0x2b1c3a), skyBot: new THREE.Color(0x4b2c48),
     stars: 0.8,
     orb: new THREE.Color(0xfff3d6), orbPos: new THREE.Vector3(6, 22, -60),
-    ambient: 0.3, ambientColor: new THREE.Color(0x9c8a7a), hemi: 0.12,
+    ambient: 0.48, ambientColor: new THREE.Color(0x9c8a7a), hemi: 0.22,
     dir: new THREE.Color(0xa8c4ff), dirIntensity: 1.0, dirPos: new THREE.Vector3(8, 16, -14),
-    lampLight: 32, lampShade: 0.9, exposure: 1.0, env: 0.07,
+    lampLight: 32, lampShade: 0.9, exposure: 1.0, env: 0.14, screens: 0.68,
     wall: new THREE.Color(0x8a7266), floor: new THREE.Color(0.55, 0.44, 0.36),
     trim: new THREE.Color(0.42, 0.3, 0.22), ceil: new THREE.Color(0x6a5a4c),
   },
@@ -188,7 +204,7 @@ const MOODS = {
     orb: new THREE.Color(0xffdba0), orbPos: new THREE.Vector3(3.5, 8.5, -60), // low sun, visible through the panes
     ambient: 0.5, ambientColor: new THREE.Color(0xffd9c0), hemi: 0.25,
     dir: new THREE.Color(0xffa860), dirIntensity: 4.4, dirPos: new THREE.Vector3(4.5, 6.5, -16), // shallow golden shaft
-    lampLight: 0, lampShade: 0.05, exposure: 1.1, env: 0.32,
+    lampLight: 0, lampShade: 0.05, exposure: 1.1, env: 0.32, screens: 1.0,
     wall: new THREE.Color(0xf7e6cd), floor: new THREE.Color(1.35, 1.05, 0.75), trim: new THREE.Color(0.95, 0.66, 0.45),
     ceil: new THREE.Color(0xf5ecdc),
   },
@@ -222,6 +238,8 @@ function applyMood(k) {
   lerpC(materials.trim.color, n.trim, d.trim, k);
   lerpC(materials.ceil.color, n.ceil, d.ceil, k);
   scene.environmentIntensity = THREE.MathUtils.lerp(n.env, d.env, k);
+  const sc = THREE.MathUtils.lerp(n.screens, d.screens, k);
+  for (const m of screenMats) m.color.setScalar(sc);
 }
 
 // Day by default — the bright storybook read is the brief
@@ -231,11 +249,71 @@ applyMood(moodMix);
 document.body.classList.add("day");
 
 
-// Small owl on the windowsill
+// Small owl on the windowsill — clickable: it hoots and says a line, and its
+// eyes track the cursor from the sill (see the gaze block in tick)
 const smallOwl = buildOwl({ scale: 0.5, accent: 0xf0a35e });
 smallOwl.group.position.set(windowWorldPos.x - 0.7, windowWorldPos.y - 1.05, windowWorldPos.z + 0.35);
 smallOwl.group.rotation.y = -0.4;
+smallOwl.group.traverse((o) => (o.userData.action = "owl"));
 scene.add(smallOwl.group);
+interactives.push({ object: smallOwl.group, action: "owl" });
+
+// Speech bubble sprite above the owl
+const owlBubble = (() => {
+  const c = document.createElement("canvas");
+  c.width = 512;
+  c.height = 224;
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  const sprite = new THREE.Sprite(
+    new THREE.SpriteMaterial({ map: tex, transparent: true, opacity: 0, depthWrite: false })
+  );
+  sprite.scale.set(1.55, 0.68, 1);
+  sprite.position.copy(smallOwl.group.position).add(new THREE.Vector3(0.15, 0.85, 0.25));
+  scene.add(sprite);
+  return { ctx: c.getContext("2d"), tex, sprite, t: -1 };
+})();
+
+function owlSay(line) {
+  const g = owlBubble.ctx;
+  const W = 512, H = 224;
+  g.clearRect(0, 0, W, H);
+  // bubble with a little tail pointing down at the owl
+  g.fillStyle = "#fdf3e3";
+  g.strokeStyle = "#d96f43";
+  g.lineWidth = 7;
+  g.beginPath();
+  g.roundRect(14, 14, W - 28, H - 74, 34);
+  g.fill();
+  g.stroke();
+  g.beginPath();
+  g.moveTo(180, H - 62);
+  g.lineTo(150, H - 12);
+  g.lineTo(230, H - 62);
+  g.closePath();
+  g.fill();
+  g.strokeStyle = "#d96f43";
+  g.beginPath();
+  g.moveTo(180, H - 60);
+  g.lineTo(150, H - 12);
+  g.lineTo(230, H - 60);
+  g.stroke();
+  // text, wrapped to the bubble
+  g.fillStyle = "#3b2b26";
+  g.font = "600 36px Karla, sans-serif";
+  g.textAlign = "center";
+  const words = line.split(" ");
+  const rows = [""];
+  for (const word of words) {
+    const probe = rows[rows.length - 1] ? `${rows[rows.length - 1]} ${word}` : word;
+    if (g.measureText(probe).width > W - 90) rows.push(word);
+    else rows[rows.length - 1] = probe;
+  }
+  const y0 = (H - 60) / 2 + 14 - (rows.length - 1) * 22;
+  rows.forEach((row, i) => g.fillText(row, W / 2, y0 + i * 44));
+  owlBubble.tex.needsUpdate = true;
+  owlBubble.t = 0;
+}
 
 // Robin flying loops outside the window
 const bird = buildBird({
@@ -403,9 +481,19 @@ const backPill = document.getElementById("back-pill");
 const srLive = document.getElementById("sr-live");
 
 function plainText(action) {
+  if (action === "projects") {
+    const r = SURFACES.resume;
+    const body = r.sections
+      .map(
+        (s) =>
+          `${s.heading}: ` +
+          s.entries.map((en) => `${en.title}${en.meta ? ` (${en.meta})` : ""}. ${en.lines.join(" ")}`).join(" ")
+      )
+      .join(" ");
+    return `Résumé. ${r.name} — ${r.role}. ${body}`;
+  }
   const s = SURFACES[action];
   if (!s) return "";
-  if (action === "projects") return `${s.title}. ${s.items.map(([n, d]) => `${n}: ${d}`).join(" ")}`;
   if (action === "contact") return `${s.title}. ${s.lines.map(([l, v]) => `${l}: ${v}`).join(". ")}`;
   return `${s.title}. ${s.lines.join(" ")}`;
 }
@@ -430,8 +518,49 @@ function activateItem(action) {
     muteBtn.classList.toggle("muted", !playing);
     return;
   }
-  if (rig.focusItem(action)) srLive.textContent = plainText(action);
+  if (rig.focusItem(action)) {
+    if (action === "projects") {
+      // the lid opens onto the résumé — start at the top
+      resumeScroll = 0;
+      surfaces.resume.offset.y = 1 - RESUME_VIEW;
+      showHint("scroll to read the résumé · click away to close");
+    }
+    srLive.textContent = plainText(action);
+  }
 }
+
+/** The owl performs from its sill: a hoot, a flap, a line of dialogue. */
+let owlPerfT = -1;
+let owlLineIdx = 0;
+function performOwl() {
+  markInteracted();
+  ambience.hoot();
+  owlPerfT = 0;
+  const line = SURFACES.owl.lines[owlLineIdx++ % SURFACES.owl.lines.length];
+  owlSay(line);
+  srLive.textContent = `${SURFACES.owl.name} the owl says: ${line}`;
+}
+
+let hintTimer = 0;
+function showHint(text) {
+  hint.innerHTML = `<span class="hint-dot"></span> ${text}`;
+  hint.classList.remove("faded");
+  clearTimeout(hintTimer);
+  hintTimer = setTimeout(() => hint.classList.add("faded"), 4500);
+}
+
+// Résumé scrolling while the laptop is focused
+let resumeScroll = 0; // 0 = top of the page, 1 = bottom
+window.addEventListener(
+  "wheel",
+  (e) => {
+    if (rig.mode !== "focused" || rig.action !== "projects") return;
+    e.preventDefault();
+    resumeScroll = THREE.MathUtils.clamp(resumeScroll + e.deltaY * 0.00045, 0, 1);
+    surfaces.resume.offset.y = (1 - RESUME_VIEW) * (1 - resumeScroll);
+  },
+  { passive: false }
+);
 
 canvas.addEventListener("click", (e) => {
   if (modal.classList.contains("open") || rig.traveling || entering) return;
@@ -449,6 +578,11 @@ canvas.addEventListener("click", (e) => {
   const zone = hit ? findZone(hit) : null;
   if (action || zone) markInteracted();
 
+  // The owl performs in place from anywhere it can be seen
+  if (action === "owl" && rig.mode !== "focused") {
+    performOwl();
+    return;
+  }
 
   if (rig.mode === "free") {
     // Tier 1: clicking a zone (or anything in it) pans the camera over
@@ -485,6 +619,10 @@ for (const btn of document.querySelectorAll("#sr-nav button")) {
   btn.addEventListener("click", () => {
     if (rig.traveling) return;
     markInteracted();
+    if (action === "owl") {
+      performOwl();
+      return;
+    }
     const z = ZONE_OF[action];
     if (rig.mode === "zone" && rig.zone === z) activateItem(action);
     else if (rig.mode === "focused") stepBack();
@@ -497,6 +635,7 @@ for (const btn of document.querySelectorAll("#sr-nav button")) {
 const clock = new THREE.Clock();
 const _lookDir = new THREE.Vector3();
 const _lookTarget = new THREE.Vector3();
+const _gaze = new THREE.Vector3();
 const _homePose = { pos: new THREE.Vector3(), dir: new THREE.Vector3() };
 
 function tick() {
@@ -553,8 +692,44 @@ function tick() {
     applyMood(moodMix);
   }
 
+  // The monitor writes its "hello" over and over
+  hello.update(dt);
+
+  // Owl gaze: pupils follow a point a few meters out along the cursor's view
+  // ray (unprojected NDC alone sits at the camera and reads as no movement)
+  if (pointer.x >= -1 && pointer.x <= 1 && pointer.y >= -1 && pointer.y <= 1) {
+    _gaze.set(pointer.x, pointer.y, 0.5).unproject(camera).sub(camera.position).normalize();
+    _gaze.multiplyScalar(7).add(camera.position);
+    smallOwl.setLookTarget(_gaze);
+  } else {
+    smallOwl.setLookTarget(null);
+  }
+
   smallOwl.update(t + 5, dt);
   bird.update(t);
+
+  // Owl performance: a bounce and a wing flap after a click (post-update so it wins)
+  if (owlPerfT >= 0) {
+    owlPerfT += dt / 1.15;
+    const p = Math.min(owlPerfT, 1);
+    const flap = Math.abs(Math.sin(p * Math.PI * 4)) * (1 - p);
+    for (const w of smallOwl.wings) w.rotation.z = w.userData.side * (0.25 + flap * 1.05);
+    smallOwl.group.scale.setScalar(0.5 * (1 + Math.sin(p * Math.PI) * 0.09));
+    if (owlPerfT >= 1) {
+      owlPerfT = -1;
+      smallOwl.group.scale.setScalar(0.5);
+      for (const w of smallOwl.wings) w.rotation.z = w.userData.side * 0.25;
+    }
+  }
+
+  // Speech bubble: pop in, linger, fade
+  if (owlBubble.t >= 0) {
+    owlBubble.t += dt;
+    const bt = owlBubble.t;
+    owlBubble.sprite.material.opacity =
+      (bt < 0.22 ? bt / 0.22 : bt < 3.4 ? 1 : Math.max(0, 1 - (bt - 3.4) / 0.6)) * 0.96;
+    if (bt > 4.2) owlBubble.t = -1;
+  }
 
   // Radio notes float while music plays
   if (radioNotes) {
@@ -588,8 +763,9 @@ tick();
 // Hover glow needs the async GLB materials once they're in
 modelsReady().then(() => rig.refreshMats());
 
-// Dev hook for state inspection (harmless in prod)
+// Dev hooks for state inspection (harmless in prod)
 window.__rig = rig;
+window.__owlBubble = owlBubble;
 
 window.addEventListener("resize", () => {
   camera.aspect = window.innerWidth / window.innerHeight;

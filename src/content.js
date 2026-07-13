@@ -4,12 +4,75 @@
  */
 /** Plain-text versions rendered onto in-scene surfaces (laptop screen, letter, bio card). */
 export const SURFACES = {
-  projects: {
-    title: "Things I've built",
-    items: [
-      ["Project One", "A one-line description of what it does and why it's neat."],
-      ["Project Two", "Another placeholder. Link it to a repo or live demo."],
-      ["Project Three", "The third slot. Three is a nice number."],
+  // Rendered on the laptop screen when it flips open. Scrollable.
+  resume: {
+    name: "John Dang",
+    role: "builder of warm little corners of the internet",
+    sections: [
+      {
+        heading: "Experience",
+        entries: [
+          {
+            title: "Placeholder Role One",
+            meta: "Some Company · 2024 — now",
+            lines: [
+              "One sentence about what you owned and shipped.",
+              "A second sentence with a number in it, numbers are convincing.",
+            ],
+          },
+          {
+            title: "Placeholder Role Two",
+            meta: "Another Place · 2022 — 2024",
+            lines: [
+              "What you built there and who it helped.",
+              "The thing you're most proud of from this chapter.",
+            ],
+          },
+          {
+            title: "Placeholder Role Three",
+            meta: "First Gig · 2020 — 2022",
+            lines: ["Where it all started. Keep it to one warm line."],
+          },
+        ],
+      },
+      {
+        heading: "Projects",
+        entries: [
+          {
+            title: "Project One",
+            meta: "the one you'd demo first",
+            lines: ["A one-line description of what it does and why it's neat."],
+          },
+          {
+            title: "Project Two",
+            meta: "link it to a repo or live demo",
+            lines: ["Another placeholder. Swap these in src/content.js."],
+          },
+        ],
+      },
+      {
+        heading: "Education",
+        entries: [
+          {
+            title: "Your University",
+            meta: "B.S. Something · Class of 20XX",
+            lines: ["Clubs, honors, or the one course that actually mattered."],
+          },
+        ],
+      },
+      {
+        heading: "Skills",
+        entries: [
+          {
+            title: "The toolbox",
+            meta: "",
+            lines: [
+              "JavaScript · TypeScript · Three.js · the usual suspects",
+              "And the soft ones: writing, patience, good taste in owls.",
+            ],
+          },
+        ],
+      },
     ],
   },
   contact: {
@@ -40,6 +103,20 @@ export const SURFACES = {
       "",
       "Placeholder — name your actual grails",
       "and designers in src/content.js.",
+    ],
+  },
+  // Ollie, the windowsill owl. One line per click, in order, then it loops.
+  owl: {
+    name: "Ollie",
+    lines: [
+      "Hoo!",
+      "Hoo hoo. That's owl for hello.",
+      "I supervise everything from this sill.",
+      "The résumé is on the laptop, if you're asking.",
+      "I saw you eyeing the garment rack.",
+      "John feeds me. I vouch for him completely.",
+      "The robin out there never stops to chat.",
+      "Okay, back to supervising.",
     ],
   },
 };

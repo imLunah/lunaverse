@@ -21,13 +21,22 @@ cream/tan bedding + one rust cushion, suitcase record player on a bench
 shelves with books/alarm-clock/mug, hanging pothos, skateboard, office chair.
 Room is a compact 10×9 m — dense and snug like the reference; everything within a few steps.
 
-**Models:** core furniture (desk, laptop, monitor, keyboard, office chair, bed,
+**Models:** core furniture (desk, monitor, keyboard, office chair, bed,
 bookcase, potted plants, book stacks) are Kenney Furniture Kit GLBs (CC0, no
 attribution required — License.txt kept in `public/models/furniture/`), placed
 via `src/models.js` (auto-grounds each model; `modelsReady()` refreshes hover
-materials). Record player, envelope, photo frame, fashion corner, window,
-shelves, and creatures stay hand-built — they carry the animations. The
-bookshelf owl (Ollie) is retired; the windowsill owl, robin, and butterfly stay.
+materials). The laptop is hand-built (its lid hinges open — GLBs can't do
+that), as are the record player, envelope, photo frame, fashion corner,
+window, shelves, and creatures — they carry the animations. The bookshelf owl
+is retired; Ollie now lives on the windowsill: clicking him hoots, flaps, and
+shows a dialogue bubble (lines cycle from `content.js`), and his pupils track
+the cursor.
+
+**Desk beats:** the monitor plays a self-writing cursive "hello" (a
+hand-authored stroke path drawn on pen-style in `src/surfaces.js`, looping
+draw → hold → fade). The laptop sits closed; focusing it flips the lid open
+onto a scrollable résumé (wheel scrolls `texture.offset.y`; copy in
+`SURFACES.resume`).
 
 **Fashion corner (John is into avant-garde fashion):** garment rack with
 sculptural monochrome pieces (black/cream/rust/charcoal), dress form with an

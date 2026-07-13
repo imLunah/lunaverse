@@ -97,61 +97,73 @@ function placeholderPhotoTexture() {
   return tex;
 }
 
-/** "hello" in handwriting for the monitor, like the reference render. */
-function helloTexture() {
-  const c = document.createElement("canvas");
-  c.width = 640;
-  c.height = 400;
-  const g = c.getContext("2d");
-  const grad = g.createLinearGradient(0, 0, 0, 400);
-  grad.addColorStop(0, "#fdf8ee");
-  grad.addColorStop(1, "#f1e4cd");
-  g.fillStyle = grad;
-  g.fillRect(0, 0, 640, 400);
-  g.fillStyle = "#4a382e";
-  g.font = "150px 'Homemade Apple', cursive";
-  g.textAlign = "center";
-  g.fillText("hello", 320, 240);
-  const tex = new THREE.CanvasTexture(c);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  return tex;
-}
-
 function buildDesk(interactives, refs) {
   const desk = new THREE.Group();
   const TOP = 1.68; // Kenney desk is 0.38 tall × scale 4.4
 
   desk.add(placeModel("desk", { scale: 4.4 }));
 
-  // Laptop — clickable → projects. A content panel rises from it on focus.
+  // Laptop — hand-built so the lid can hinge. Closed on the desk; clicking it
+  // (action "projects") makes the choreography flip the lid open onto the
+  // résumé screen (a scrollable canvas texture applied in main.js).
   const laptop = new THREE.Group();
-  laptop.add(placeModel("laptop", { scale: 4.2 })); // true model is 0.26 wide
-  const screen = new THREE.Mesh(
-    new THREE.PlaneGeometry(1.5, 0.94),
-    new THREE.MeshBasicMaterial({ color: PALETTE.cream, side: THREE.DoubleSide })
+  const shellMat = mat(0x3a3540, { roughness: 0.45, metalness: 0.35 });
+  const insetMat = mat(0x211e26, { roughness: 0.65 });
+  laptop.add(
+    box(1.12, 0.07, 0.78, shellMat, 0, 0.035, 0), // base
+    box(0.92, 0.02, 0.4, insetMat, 0, 0.065, -0.08), // keyboard well
+    box(0.3, 0.016, 0.2, insetMat, 0, 0.065, 0.24) // trackpad
   );
-  screen.scale.setScalar(0.001);
-  screen.position.set(0, 0.6, 0);
-  laptop.add(screen);
+  const lid = new THREE.Group(); // hinge lives at the back edge of the base
+  lid.position.set(0, 0.075, -0.39);
+  const lidShell = box(1.12, 0.05, 0.78, shellMat, 0, 0.028, 0.39);
+  const logo = new THREE.Mesh(
+    new THREE.CircleGeometry(0.07, 20),
+    new THREE.MeshBasicMaterial({ color: PALETTE.amber })
+  );
+  logo.rotation.x = -Math.PI / 2;
+  logo.position.set(0, 0.054, 0.39);
+  // Résumé screen on the lid's inner face: hidden while closed, faces the
+  // visitor once the lid swings up
+  const screen = new THREE.Mesh(
+    new THREE.PlaneGeometry(1.02, 0.64),
+    new THREE.MeshBasicMaterial({ color: PALETTE.cream })
+  );
+  screen.rotation.x = Math.PI / 2;
+  screen.position.set(0, -0.004, 0.4);
+  screen.visible = false;
+  lid.add(lidShell, logo, screen);
+  // hinge barrels
+  for (const hx of [-0.42, 0.42]) {
+    const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.032, 0.16, 10), insetMat);
+    barrel.rotation.z = Math.PI / 2;
+    barrel.position.set(hx, 0.075, -0.38);
+    laptop.add(barrel);
+  }
+  laptop.add(lid);
   laptop.position.set(-0.95, TOP, 0.15);
   laptop.rotation.y = 0.24;
-  laptop.userData.action = "projects";
+  laptop.traverse((o) => (o.userData.action = "projects"));
   desk.add(laptop);
   interactives.push({ object: laptop, action: "projects" });
-  refs.laptop = { group: laptop, screen };
+  refs.laptop = { group: laptop, lid, screen };
 
-  // Monitor with a handwritten "hello", like the reference
+  // Monitor with the self-writing "hello" (texture applied in main.js).
+  // Plane matches the GLB's display quad: x 0.007..0.386, y 0.056..0.287,
+  // raked back 8° (normal [0, 0.139, 0.99]), measured from the mesh.
   const monitor = new THREE.Group();
   monitor.add(placeModel("computerScreen", { scale: 3.4 }));
   const mScreen = new THREE.Mesh(
-    new THREE.PlaneGeometry(1.08, 0.62),
-    new THREE.MeshBasicMaterial({ map: helloTexture() })
+    new THREE.PlaneGeometry(1.27, 0.775),
+    new THREE.MeshBasicMaterial({ color: PALETTE.cream })
   );
-  mScreen.position.set(0, 0.58, 0.19);
+  mScreen.position.set(0, 0.584, 0.014);
+  mScreen.rotation.x = -0.1394;
   monitor.add(mScreen);
   monitor.position.set(0.85, TOP, -0.3);
   monitor.rotation.y = -0.08;
   desk.add(monitor);
+  refs.monitor = { screen: mScreen };
 
   const keyboard = placeModel("computerKeyboard", { scale: 3.2 });
   keyboard.position.set(0.8, TOP, 0.35);

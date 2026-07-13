@@ -25,7 +25,8 @@ export const ZONE_OF = { projects: "desk", contact: "desk", about: "gallery", ra
 
 // Close-up item poses within a zone
 const FOCUS = {
-  projects: { pos: new THREE.Vector3(-3.05, 2.3, -1.3), target: new THREE.Vector3(-3.15, 1.9, -3.15) },
+  // The laptop's open lid tilts back ~22°, so the camera sits high, along its normal
+  projects: { pos: new THREE.Vector3(-2.65, 2.9, -1.65), target: new THREE.Vector3(-3.1, 2.1, -3.55) },
   contact: { pos: new THREE.Vector3(-2.15, 2.55, -1.2), target: new THREE.Vector3(-2.15, 2.0, -2.75) },
   about: { pos: new THREE.Vector3(-3.15, 3.35, -2.0), target: new THREE.Vector3(-4.6, 3.35, -2.0) },
   style: { pos: new THREE.Vector3(3.0, 1.8, 2.3), target: new THREE.Vector3(4.5, 1.5, 2.7) },
@@ -180,11 +181,10 @@ export class Choreography {
     const { laptop, envelope, photo } = this.refs;
 
     if (this.action === "projects" || r > 0.002) {
+      // The laptop lid hinges open onto the résumé screen
       const pr = this.action === "projects" ? r : 0;
-      const panel = laptop.screen;
-      panel.scale.setScalar(Math.max(0.001, pr));
-      panel.position.y = 0.55 + pr * 0.55;
-      if (pr > 0.05) panel.lookAt(this.camera.position);
+      laptop.lid.rotation.x = -1.95 * pr;
+      laptop.screen.visible = pr > 0.03;
     }
     if (this.action === "contact" || r > 0.002) {
       const lr = this.action === "contact" ? r : 0;

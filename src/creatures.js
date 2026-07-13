@@ -24,7 +24,7 @@ export function buildOwl({ scale = 1, accent = 0xd96f43 } = {}) {
   belly.position.set(0, -0.08, 0.18);
   owl.add(belly);
 
-  // Eye discs + pupils (pupils scale to blink)
+  // Eye discs + pupils (pupils scale to blink and slide to follow the cursor)
   const pupils = [];
   for (const side of [-1, 1]) {
     const disc = new THREE.Mesh(new THREE.SphereGeometry(0.15, 16, 12), std(0xf3e5c8));
@@ -33,6 +33,7 @@ export function buildOwl({ scale = 1, accent = 0xd96f43 } = {}) {
     owl.add(disc);
     const pupil = new THREE.Mesh(new THREE.SphereGeometry(0.06, 10, 8), std(0x241b2f, { roughness: 0.4 }));
     pupil.position.set(side * 0.16, 0.22, 0.44);
+    pupil.userData.base = pupil.position.clone();
     owl.add(pupil);
     pupils.push(pupil);
   }
@@ -76,11 +77,43 @@ export function buildOwl({ scale = 1, accent = 0xd96f43 } = {}) {
   let blinkT = -1;
   const baseY = pupils[0].scale.y;
 
+  // Cursor gaze: main.js feeds a world-space point; pupils drift toward it
+  const gaze = new THREE.Vector3();
+  let hasGaze = false;
+  const _local = new THREE.Vector3();
+  const _dir = new THREE.Vector3();
+
+  function setLookTarget(worldPoint) {
+    if (worldPoint) {
+      gaze.copy(worldPoint);
+      hasGaze = true;
+    } else {
+      hasGaze = false;
+    }
+  }
+
   function update(t, dt) {
     // gentle breathing
     body.scale.y = 1.2 + Math.sin(t * 1.6) * 0.02;
     // head-ish sway
     owl.rotation.y = Math.sin(t * 0.4) * 0.12;
+    // pupils track the cursor (or drift home when it leaves)
+    for (const p of pupils) {
+      const base = p.userData.base;
+      let tx = base.x, ty = base.y;
+      if (hasGaze) {
+        _local.copy(gaze);
+        owl.worldToLocal(_local);
+        _dir.copy(_local).sub(base);
+        if (_dir.z < 0.2) _dir.z = 0.2; // never look backwards through the head
+        _dir.normalize();
+        tx = base.x + _dir.x * 0.055;
+        ty = base.y + _dir.y * 0.05;
+      }
+      const k = Math.min(1, dt * 10);
+      p.position.x += (tx - p.position.x) * k;
+      p.position.y += (ty - p.position.y) * k;
+    }
     // blinking
     nextBlink -= dt;
     if (nextBlink <= 0 && blinkT < 0) {
@@ -95,7 +128,7 @@ export function buildOwl({ scale = 1, accent = 0xd96f43 } = {}) {
     }
   }
 
-  return { group: owl, update, wings, body };
+  return { group: owl, update, wings, body, setLookTarget };
 }
 
 /** A butterfly drifting a lazy figure-eight. Returns { group, update(t) } */
