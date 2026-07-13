@@ -161,31 +161,26 @@ const moon = new THREE.Mesh(
 moon.position.set(2.8, 11, -60);
 scene.add(moon);
 const MOON_NIGHT = new THREE.Vector3(2.8, 11, -60); // framed by the panes
-const MOON_DAY = new THREE.Vector3(2.0, -13, -60); // below the frame — it rises into view
 
 // Celestial bodies travel arcs at full opacity — they move away rather than
 // fade. The leaving body sweeps right and UP, out past the window's top-right
 // corner; the entering body comes in from the upper left, curving right and
 // DOWN into its perch. Off-screen parking spots sit above/beside the patch of
-// sky any camera pose can see through the panes. Initialized to the dawn
-// config so a day-mode load parks the moon hidden off to the right.
-const sunPath = { from: new THREE.Vector3(-14, 22, -60), ctrl: new THREE.Vector3(-4, 16, -60) }; // night-side end
-const moonPath = { to: new THREE.Vector3(15, 26, -60), ctrl: new THREE.Vector3(13, 12, -60) }; // day-side end
-function aimCelestialPaths(towardDay) {
-  if (towardDay) {
-    // dawn: moon leaves up-right, sun sweeps in from the upper left
-    sunPath.from.set(-14, 22, -60);
-    sunPath.ctrl.set(-4, 16, -60);
-    moonPath.to.set(15, 26, -60);
-    moonPath.ctrl.set(13, 12, -60);
-  } else {
-    // dusk: sun leaves up-right, moon sweeps in from the upper left
-    sunPath.from.set(15, 25, -60);
-    sunPath.ctrl.set(13.5, 10, -60);
-    moonPath.to.set(-14, 24, -60);
-    moonPath.ctrl.set(0, 15, -60);
-  }
-}
+// sky any camera pose can see through the panes.
+//
+// Each body carries its own traveler whose arc starts from WHEREVER the body
+// currently is: spamming the toggle retargets mid-sky bodies smoothly instead
+// of teleporting them onto a re-aimed fixed path.
+const SUN_DAY = new THREE.Vector3(3.5, 8.5, -60); // matches MOODS.day.orbPos
+const SUN_EXIT = new THREE.Vector3(15, 25, -60);
+const SUN_EXIT_CTRL = new THREE.Vector3(13.5, 10, -60);
+const SUN_ENTRY = new THREE.Vector3(-14, 22, -60);
+const SUN_ENTRY_CTRL = new THREE.Vector3(-4, 16, -60);
+const MOON_EXIT = new THREE.Vector3(15, 26, -60);
+const MOON_EXIT_CTRL = new THREE.Vector3(13, 12, -60);
+const MOON_ENTRY = new THREE.Vector3(-14, 24, -60);
+const MOON_ENTRY_CTRL = new THREE.Vector3(0, 15, -60);
+
 function arcLerp(out, a, ctrl, b, k) {
   const u = 1 - k;
   out.set(
@@ -194,6 +189,38 @@ function arcLerp(out, a, ctrl, b, k) {
     u * u * a.z + 2 * u * k * ctrl.z + k * k * b.z
   );
 }
+
+function makeTraveler(mesh) {
+  return { mesh, t: -1, dur: 2.6, from: new THREE.Vector3(), ctrl: new THREE.Vector3(), to: new THREE.Vector3() };
+}
+const sunTravel = makeTraveler(orb);
+const moonTravel = makeTraveler(moon);
+
+/** Start (or retarget) a body's arc. entryStart is only for a body coming in
+    from off-screen: if it's parked (not mid-flight), snap it — invisibly —
+    to this direction's entry side first. Mid-flight bodies just curve on. */
+function sendBody(travel, entryStart, ctrl, dest) {
+  if (travel.t < 0 && entryStart) travel.mesh.position.copy(entryStart);
+  travel.from.copy(travel.mesh.position);
+  travel.ctrl.copy(ctrl);
+  travel.to.copy(dest);
+  travel.t = REDUCED_MOTION ? 0.999 : 0;
+}
+
+function aimCelestialPaths(towardDay) {
+  if (towardDay) {
+    // dawn: moon leaves up-right, sun sweeps in from the upper left
+    sendBody(moonTravel, null, MOON_EXIT_CTRL, MOON_EXIT);
+    sendBody(sunTravel, SUN_ENTRY, SUN_ENTRY_CTRL, SUN_DAY);
+  } else {
+    // dusk: sun leaves up-right, moon sweeps in from the upper left
+    sendBody(sunTravel, null, SUN_EXIT_CTRL, SUN_EXIT);
+    sendBody(moonTravel, MOON_ENTRY, MOON_ENTRY_CTRL, MOON_NIGHT);
+  }
+}
+
+// Day is the default mood: sun already in its day spot, moon parked off-screen
+moon.position.copy(MOON_EXIT);
 
 // Little stars in the patch of sky the window actually shows — the dome
 // stars sit too high and wide to ever be seen through the panes
@@ -394,7 +421,7 @@ const MOODS = {
   night: {
     skyTop: new THREE.Color(0x120c1c), skyMid: new THREE.Color(0x2b1c3a), skyBot: new THREE.Color(0x4b2c48),
     stars: 0.8,
-    orb: new THREE.Color(0xff8a55), // the setting sun's color mid-transition; its path lives in sunPath
+    orb: new THREE.Color(0xff8a55), // the setting sun's color mid-transition; its path lives in sunTravel
     ambient: 0.48, ambientColor: new THREE.Color(0x9c8a7a), hemi: 0.22,
     dir: new THREE.Color(0xa8c4ff), dirIntensity: 0.5, dirPos: new THREE.Vector3(8, 16, -14),
     lampLight: 32, lampShade: 0.9, deskLamp: 6, deskGlow: 0.9, exposure: 1.0, env: 0.14, screens: 0.68,
@@ -429,7 +456,6 @@ function applyMood(k) {
   starsMat.opacity = THREE.MathUtils.lerp(n.stars, d.stars, k);
   windowStarsMat.opacity = THREE.MathUtils.lerp(0.95, 0, k);
   lerpC(orb.material.color, n.orb, d.orb, k);
-  arcLerp(orb.position, sunPath.from, sunPath.ctrl, d.orbPos, k);
   moonlight.position.lerpVectors(n.dirPos, d.dirPos, k);
   lerpC(ambient.color, n.ambientColor, d.ambientColor, k);
   ambient.intensity = THREE.MathUtils.lerp(n.ambient, d.ambient, k);
@@ -444,9 +470,8 @@ function applyMood(k) {
   if (refs.deskLamp.shadeMat) {
     refs.deskLamp.shadeMat.emissiveIntensity = THREE.MathUtils.lerp(n.deskGlow, d.deskGlow, k);
   }
-  // Celestial swap: no fading — each body physically travels its arc out of
-  // (or into) the sky the window frames
-  arcLerp(moon.position, MOON_NIGHT, moonPath.ctrl, moonPath.to, k);
+  // Celestial positions are owned by the travelers (see the tick loop) —
+  // applyMood only grades colors and lights
   // Sun shafts, glare, and motes only live in the sunset
   for (const child of sunRays.children) {
     child.material.opacity = child.userData.baseOpacity * k;
@@ -995,6 +1020,17 @@ function tick() {
       arr[i * 3 + 1] = base[i * 3 + 1] + Math.sin(t * 0.22 + seed[i] * 1.7) * 0.18;
     }
     points.geometry.attributes.position.needsUpdate = true;
+  }
+
+  // Sun/moon travelers: each body flies its own arc, retargeted from its
+  // current position whenever the toggle fires
+  for (const tr of [sunTravel, moonTravel]) {
+    if (tr.t < 0) continue;
+    tr.t += dt / tr.dur;
+    const p = Math.min(tr.t, 1);
+    const e = p * p * (3 - 2 * p);
+    arcLerp(tr.mesh.position, tr.from, tr.ctrl, tr.to, e);
+    if (p >= 1) tr.t = -1;
   }
 
   // Day/night crossfade — unhurried, so the sun-for-moon swap reads
