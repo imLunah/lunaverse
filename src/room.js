@@ -1,7 +1,6 @@
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
-import { plasterBump, fabricBump } from "./textures.js";
-import { pbrMaps } from "./pbr.js";
+import { woodPlanks, woodGrain, plasterBump, fabricBump } from "./textures.js";
 
 /**
  * The room, rebuilt to the warm wood reference (2026-07-12): wood-paneled
@@ -45,15 +44,14 @@ function box(w, h, d, material, x = 0, y = 0, z = 0) {
   return m;
 }
 
-// Scanned CC0 material sets (ambientCG) — the realism backbone
-const FURN_WOOD = pbrMaps("Wood067", [1.4, 1.4]);
+// Cute-cartoony surfaces (design-review 2026-07-12): clean stylized albedo,
+// realism comes from the LIGHTING (IBL, soft shadows, bloom), not photo scans.
+const FURN_WOOD = woodGrain();
 const FABRIC = fabricBump();
 
 function woodMat(hex, opts = {}) {
-  const m = mat(0xffffff, { ...FURN_WOOD, ...opts });
-  // Lifted + softened: the reference reads clean stylized, not gritty photoreal
-  m.color.set(hex).multiplyScalar(3.9).addScalar(0.35);
-  m.normalScale.set(0.55, 0.55);
+  const m = mat(0xffffff, { map: FURN_WOOD, roughness: 0.72, ...opts });
+  m.color.set(hex).multiplyScalar(1.35).addScalar(0.12); // grain base is light — gentle tint
   return m;
 }
 
@@ -593,13 +591,10 @@ export function buildRoom() {
   const room = new THREE.Group();
 
   // Shared materials the day/night grade lerps (see MOODS in main.js).
-  // Normal maps dialed down — stylized-clean, per the reference render.
-  const floorMat = mat(0xffffff, { ...pbrMaps("WoodFloor043", [5, 4.2]), metalness: 0.02 });
-  floorMat.normalScale.set(0.6, 0.6);
-  const wallMat = mat(0xffffff, { ...pbrMaps("Wood067", [4.5, 2]) }); // wood paneling
-  wallMat.normalScale.set(0.45, 0.45);
-  wallMat.roughness = 0.8;
-  const trimMat = woodMat(PALETTE.dark);
+  // Clean stylized: plank lines on the floor, soft plaster walls, honey trim.
+  const floorMat = mat(0xffffff, { map: woodPlanks([4, 3.5]), roughness: 0.7, metalness: 0 });
+  const wallMat = mat(0xf7e6cd, { roughness: 0.95, bumpMap: plasterBump([4, 2.4]), bumpScale: 0.35 });
+  const trimMat = woodMat(PALETTE.wood);
   const ceilMat = mat(0xf2e6d4, { roughness: 0.95, bumpMap: plasterBump([5, 4]), bumpScale: 0.25 });
 
   // Floor + rug
@@ -607,9 +602,7 @@ export function buildRoom() {
   floor.receiveShadow = true;
   room.add(floor);
 
-  const rugMaps = pbrMaps("Carpet004", [1.4, 1.4]);
-  const rugMat = mat(0xffffff, { ...rugMaps, roughness: 1 });
-  rugMat.color.set(PALETTE.rug).multiplyScalar(2.6).addScalar(0.15);
+  const rugMat = mat(0xe0836a, { roughness: 1, bumpMap: FABRIC, bumpScale: 0.4 }); // flat coral, woven feel
   const rug = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 2.6, 0.05, 64), rugMat);
   rug.position.set(0.6, 0.03, 0.8);
   rug.receiveShadow = true;

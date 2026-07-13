@@ -176,8 +176,8 @@ const MOODS = {
     ambient: 0.3, ambientColor: new THREE.Color(0x9c8a7a), hemi: 0.12,
     dir: new THREE.Color(0xa8c4ff), dirIntensity: 1.0, dirPos: new THREE.Vector3(8, 16, -14),
     lampLight: 32, lampShade: 0.9, exposure: 1.0, env: 0.07,
-    wall: new THREE.Color(1.05, 0.85, 0.66), floor: new THREE.Color(0.62, 0.5, 0.42),
-    trim: new THREE.Color(0x3f2f26), ceil: new THREE.Color(0x6a5a4c),
+    wall: new THREE.Color(0x8a7266), floor: new THREE.Color(0.55, 0.44, 0.36),
+    trim: new THREE.Color(0.42, 0.3, 0.22), ceil: new THREE.Color(0x6a5a4c),
   },
   day: {
     skyTop: new THREE.Color(0x5a6ba8), skyMid: new THREE.Color(0xf2a878), skyBot: new THREE.Color(0xffc188),
@@ -186,7 +186,7 @@ const MOODS = {
     ambient: 0.5, ambientColor: new THREE.Color(0xffd9c0), hemi: 0.25,
     dir: new THREE.Color(0xffa860), dirIntensity: 4.4, dirPos: new THREE.Vector3(4.5, 6.5, -16), // shallow golden shaft
     lampLight: 0, lampShade: 0.05, exposure: 1.1, env: 0.32,
-    wall: new THREE.Color(2.5, 2.05, 1.55), floor: new THREE.Color(1.25, 1.02, 0.82), trim: new THREE.Color(0x8a5f42),
+    wall: new THREE.Color(0xf7e6cd), floor: new THREE.Color(1.35, 1.05, 0.75), trim: new THREE.Color(0.95, 0.66, 0.45),
     ceil: new THREE.Color(0xf5ecdc),
   },
 };
