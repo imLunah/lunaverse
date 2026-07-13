@@ -19,7 +19,7 @@ dark panel rail, dark plank floor, ceiling beams, cream curtains, bed with
 cream/tan bedding + one rust cushion, suitcase record player on a bench
 (replaces the radio; same "radio" action), "hello" handwriting monitor, wall
 shelves with books/alarm-clock/mug, hanging pothos, skateboard, office chair.
-Room is 14×12 m with reserved open floor for future additions.
+Room is a compact 10×9 m — dense and snug like the reference; everything within a few steps.
 
 **Fashion corner (John is into avant-garde fashion):** garment rack with
 sculptural monochrome pieces (black/cream/rust/charcoal), dress form with an
