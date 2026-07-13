@@ -15,7 +15,7 @@ const EASE = (k) => 1 - Math.pow(1 - k, 3); // ease-out cubic
 
 // Mid-distance zone poses: where you stand to survey each area
 const ZONES = {
-  desk: { pos: new THREE.Vector3(-2.0, 3.0, 0.7), target: new THREE.Vector3(-2.3, 1.5, -3.4) },
+  desk: { pos: new THREE.Vector3(-2.0, 3.0, 0.7), target: new THREE.Vector3(-2.3, 1.5, -3.2) },
   gallery: { pos: new THREE.Vector3(-2.2, 3.5, -1.9), target: new THREE.Vector3(-4.6, 3.3, -2.0) },
   music: { pos: new THREE.Vector3(2.6, 2.5, 0.4), target: new THREE.Vector3(4.4, 0.85, 0.4) },
   fashion: { pos: new THREE.Vector3(2.3, 2.4, 2.2), target: new THREE.Vector3(4.4, 1.35, 2.7) },
@@ -25,8 +25,8 @@ export const ZONE_OF = { projects: "desk", contact: "desk", about: "gallery", ra
 
 // Close-up item poses within a zone
 const FOCUS = {
-  projects: { pos: new THREE.Vector3(-3.05, 2.35, -1.1), target: new THREE.Vector3(-3.15, 1.95, -2.85) },
-  contact: { pos: new THREE.Vector3(-2.15, 2.55, -0.9), target: new THREE.Vector3(-2.15, 2.0, -2.45) },
+  projects: { pos: new THREE.Vector3(-3.05, 2.3, -1.3), target: new THREE.Vector3(-3.15, 1.9, -3.15) },
+  contact: { pos: new THREE.Vector3(-2.15, 2.55, -1.2), target: new THREE.Vector3(-2.15, 2.0, -2.75) },
   about: { pos: new THREE.Vector3(-3.15, 3.35, -2.0), target: new THREE.Vector3(-4.6, 3.35, -2.0) },
   style: { pos: new THREE.Vector3(3.0, 1.8, 2.3), target: new THREE.Vector3(4.5, 1.5, 2.7) },
 };

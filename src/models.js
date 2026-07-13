@@ -26,8 +26,12 @@ export function placeModel(name, { scale = 2, rotationY = 0, offsetY = 0 } = {})
             o.receiveShadow = true;
           }
         });
-        // Auto-ground: node transforms vary per model, so measure and sit it on y=0
+        // Kenney models are corner-origined with per-node transforms: measure
+        // the real box, center the footprint on the group origin, sit on y=0.
         const bb = new THREE.Box3().setFromObject(m);
+        const c = bb.getCenter(new THREE.Vector3());
+        m.position.x -= c.x;
+        m.position.z -= c.z;
         m.position.y = offsetY - bb.min.y;
         group.add(m);
         resolve(group);

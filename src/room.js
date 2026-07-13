@@ -125,7 +125,7 @@ function buildDesk(interactives, refs) {
 
   // Laptop — clickable → projects. A content panel rises from it on focus.
   const laptop = new THREE.Group();
-  laptop.add(placeModel("laptop", { scale: 1.9 }));
+  laptop.add(placeModel("laptop", { scale: 4.2 })); // true model is 0.26 wide
   const screen = new THREE.Mesh(
     new THREE.PlaneGeometry(1.5, 0.94),
     new THREE.MeshBasicMaterial({ color: PALETTE.cream, side: THREE.DoubleSide })
@@ -147,7 +147,7 @@ function buildDesk(interactives, refs) {
     new THREE.PlaneGeometry(1.08, 0.62),
     new THREE.MeshBasicMaterial({ map: helloTexture() })
   );
-  mScreen.position.set(0, 0.62, 0.1);
+  mScreen.position.set(0, 0.58, 0.19);
   monitor.add(mScreen);
   monitor.position.set(0.85, TOP, -0.3);
   monitor.rotation.y = -0.08;
@@ -159,7 +159,7 @@ function buildDesk(interactives, refs) {
   desk.add(keyboard);
 
   const deskBooks = placeModel("books", { scale: 3 });
-  deskBooks.position.set(-1.4, TOP, -0.35);
+  deskBooks.position.set(-1.3, TOP, -0.62);
   deskBooks.rotation.y = 0.5;
   desk.add(deskBooks);
 
@@ -601,7 +601,7 @@ export function buildRoom() {
 
   // ── Furniture ──
   const desk = buildDesk(interactives, refs);
-  desk.position.set(-2.2, 0, -3.0); // Kenney desk is deeper than the old slab
+  desk.position.set(-2.2, 0, -3.3); // centered footprint, back edge near the wall
   room.add(desk);
   refs.desk = desk;
   // Zone tag: clicking the desk area pans the camera over (items keep their action tags)
@@ -609,13 +609,13 @@ export function buildRoom() {
     if (!o.userData.action) o.userData.zone = "desk";
   });
 
-  const chair = placeModel("chairDesk", { scale: 4.0, rotationY: Math.PI + 0.35 });
+  const chair = placeModel("chairDesk", { scale: 3.1, rotationY: Math.PI + 0.35 }); // true model is 0.61 tall
   chair.position.set(-2.3, 0, -1.5);
   room.add(chair);
   chair.userData.zone = "desk";
 
   const shelf = placeModel("bookcaseOpen", { scale: 4.5, rotationY: Math.PI / 2 });
-  shelf.position.set(-4.35, 0, 1.6);
+  shelf.position.set(-4.1, 0, 1.6); // centered footprint clears the wall
   room.add(shelf);
   shelf.userData.zone = "gallery";
 
@@ -630,8 +630,8 @@ export function buildRoom() {
   hangingPlant2.position.set(-4.5, 4.6, 4.0);
   room.add(hangingPlant2);
 
-  const bed = placeModel("bedDouble", { scale: 1.6 });
-  bed.position.set(3.3, 0, -2.7); // tucked under the window's right edge, like the reference
+  const bed = placeModel("bedDouble", { scale: 2.7 }); // true model is 0.96×1.13
+  bed.position.set(3.3, 0, -2.65); // tucked under the window's right edge, like the reference
   room.add(bed);
 
   const player = buildRecordPlayer(interactives, refs);
@@ -674,16 +674,16 @@ export function buildRoom() {
   room.add(mirror);
 
   // Potted plants (Kenney models)
-  const plant = placeModel("pottedPlant", { scale: 2.6 });
+  const plant = placeModel("pottedPlant", { scale: 2.3 });
   plant.position.set(-4.1, 0, -3.9);
   room.add(plant);
 
-  const plant2 = placeModel("pottedPlant", { scale: 1.8, rotationY: 1.2 });
+  const plant2 = placeModel("pottedPlant", { scale: 1.7, rotationY: 1.2 });
   plant2.position.set(-0.05, 0, -4.0);
   room.add(plant2);
 
   // Little accents on the wall shelves
-  const shelfPlant = placeModel("plantSmall1", { scale: 3 });
+  const shelfPlant = placeModel("plantSmall1", { scale: 5.5 });
   shelfPlant.position.set(-1.8, 3.15, wz + 0.42);
   room.add(shelfPlant);
   const shelfBooks = placeModel("books", { scale: 3, rotationY: -0.2 });
