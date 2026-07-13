@@ -171,17 +171,19 @@ const MOON_NIGHT = new THREE.Vector3(2.8, 11, -60); // framed by the panes
 // Each body carries its own traveler whose arc starts from WHEREVER the body
 // currently is: spamming the toggle retargets mid-sky bodies smoothly instead
 // of teleporting them onto a re-aimed fixed path.
-// Controls sit far off the straight line so the arcs whip: exits shoot
-// sideways before climbing out; entries sweep in high and dive onto the perch
+// One continuous sweep, no hook-and-drop: the end tangent of a quadratic
+// bezier is (end - ctrl), so entry controls sit LEFT of the perch (the body
+// arrives still gliding right-and-down at ~40°) and exit controls sit left of
+// the exit point (it leaves still climbing right, never backtracking).
 const SUN_DAY = new THREE.Vector3(3.5, 8.5, -60); // matches MOODS.day.orbPos
-const SUN_EXIT = new THREE.Vector3(15, 25, -60);
-const SUN_EXIT_CTRL = new THREE.Vector3(17, 7, -60);
-const SUN_ENTRY = new THREE.Vector3(-14, 22, -60);
-const SUN_ENTRY_CTRL = new THREE.Vector3(2, 20, -60);
-const MOON_EXIT = new THREE.Vector3(15, 26, -60);
-const MOON_EXIT_CTRL = new THREE.Vector3(18, 13, -60);
-const MOON_ENTRY = new THREE.Vector3(-14, 24, -60);
-const MOON_ENTRY_CTRL = new THREE.Vector3(4, 18, -60);
+const SUN_EXIT = new THREE.Vector3(19, 26, -60);
+const SUN_EXIT_CTRL = new THREE.Vector3(14, 10, -60);
+const SUN_ENTRY = new THREE.Vector3(-18, 25, -60);
+const SUN_ENTRY_CTRL = new THREE.Vector3(-5, 16, -60);
+const MOON_EXIT = new THREE.Vector3(19, 27, -60);
+const MOON_EXIT_CTRL = new THREE.Vector3(13, 11.5, -60);
+const MOON_ENTRY = new THREE.Vector3(-18, 26, -60);
+const MOON_ENTRY_CTRL = new THREE.Vector3(-5.5, 17.5, -60);
 
 function arcLerp(out, a, ctrl, b, k) {
   const u = 1 - k;
