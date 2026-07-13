@@ -175,13 +175,6 @@ function buildDesk(interactives, refs) {
   deskBooks.rotation.y = 0.5;
   desk.add(deskBooks);
 
-  // Headphones resting by the keyboard — "Sony WH-1000XM4 - Black and brown"
-  // by Lauri Grekula (CC BY 4.0, see public/models/furniture/CREDITS.txt),
-  // simplified from the original scan
-  const phones = placeModel("headphonesXM4", { scale: 0.26, rotationY: -0.6 });
-  phones.position.set(1.35, TOP, 0.42);
-  desk.add(phones);
-
   // Envelope — clickable → contact. The letter rises out on focus.
   const envelope = new THREE.Group();
   const paper = box(0.62, 0.04, 0.42, mat(PALETTE.cream, { roughness: 0.6 }));
@@ -690,6 +683,27 @@ export function buildRoom() {
   const shelfBooks = placeModel("books", { scale: 3, rotationY: -0.2 });
   shelfBooks.position.set(-3.3, 3.15, wz + 0.42);
   room.add(shelfBooks);
+
+  // Headphone stand between the books and the plant, with the XM4 hanging
+  // from its saddle — "Sony WH-1000XM4 - Black and brown" by Lauri Grekula
+  // (CC BY 4.0, see public/models/furniture/CREDITS.txt)
+  const hpStand = new THREE.Group();
+  const hpMetal = mat(0x2e2a33, { roughness: 0.35, metalness: 0.55 });
+  const hsBase = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.1, 0.03, 16), hpMetal);
+  hsBase.position.y = 0.015;
+  const hsPost = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.44, 10), hpMetal);
+  hsPost.position.y = 0.25;
+  const hsSaddle = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.028, 0.16, 12), hpMetal);
+  hsSaddle.rotation.x = Math.PI / 2;
+  hsSaddle.position.y = 0.47;
+  hpStand.add(hsBase, hsPost, hsSaddle);
+  hpStand.traverse((o) => { o.castShadow = true; });
+  hpStand.position.set(-2.55, 3.145, wz + 0.42);
+  room.add(hpStand);
+  const phones = placeModel("headphonesXM4", { scale: 0.26, rotationY: Math.PI / 2 });
+  // hang from the saddle: band top kisses it, cups float just above the shelf
+  phones.position.set(-2.55, 3.23, wz + 0.42);
+  room.add(phones);
 
   // Little desk lamp (Kenney lampRoundTable) tucked between laptop and monitor
   // at the desk's back edge, clear of the laptop lid's swing. applyMood turns
