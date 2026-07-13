@@ -454,7 +454,6 @@ interactives.push({ object: smallOwl.group, action: "owl" });
 // Flight between perches: quadratic bezier through a raised midpoint
 const owlFlight = {
   t: -1, // -1 idle, 0..1 flying
-  landT: -1,
   dur: 1.8,
   from: new THREE.Vector3(),
   mid: new THREE.Vector3(),
@@ -473,7 +472,6 @@ function owlFlyTo(spot) {
   owlFlight.mid.lerpVectors(owlFlight.from, owlFlight.to, 0.5).add(new THREE.Vector3(0, 0.9, 0.45));
   owlFlight.toYaw = dest.yaw;
   owlFlight.t = 0;
-  owlFlight.landT = -1;
 }
 
 // Speech bubble sprite above the owl
@@ -1005,21 +1003,11 @@ function tick() {
     const flap = Math.abs(Math.sin(p * Math.PI * 7)) * (1 - Math.abs(p - 0.5) * 1.2);
     for (const w of smallOwl.wings) w.rotation.z = w.userData.side * (0.25 + flap * 1.15);
     if (p >= 1) {
+      // No landing squash — scaling the group lifts his feet off the perch
+      // and reads as a jiggle; the sleep-tuck is settle enough
       owlFlight.t = -1;
-      owlFlight.landT = 0;
       smallOwl.group.userData.baseYaw = owlFlight.toYaw;
       for (const w of smallOwl.wings) w.rotation.z = w.userData.side * 0.25;
-    }
-  }
-  // Landing settle: one soft squash
-  if (owlFlight.landT >= 0) {
-    owlFlight.landT += dt / 0.45;
-    const q = Math.min(owlFlight.landT, 1);
-    const squash = Math.sin(q * Math.PI) * 0.12;
-    smallOwl.group.scale.set(0.5 * (1 + squash * 0.6), 0.5 * (1 - squash), 0.5 * (1 + squash * 0.6));
-    if (q >= 1) {
-      owlFlight.landT = -1;
-      smallOwl.group.scale.setScalar(0.5);
     }
   }
 
