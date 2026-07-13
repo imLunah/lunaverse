@@ -163,6 +163,20 @@ scene.add(moon);
 const MOON_NIGHT = new THREE.Vector3(2.8, 11, -60); // framed by the panes
 const MOON_DAY = new THREE.Vector3(2.0, -13, -60); // below the frame — it rises into view
 
+// Celestial bodies travel arcs, not elevators: each path bends through a
+// laterally offset control point so the sweep reads circular. The sun sets
+// curving down-right; the moon rises curving in from the lower left.
+const SUN_ARC_CTRL = new THREE.Vector3(12, -2, -60);
+const MOON_ARC_CTRL = new THREE.Vector3(-6, -1, -60);
+function arcLerp(out, a, ctrl, b, k) {
+  const u = 1 - k;
+  out.set(
+    u * u * a.x + 2 * u * k * ctrl.x + k * k * b.x,
+    u * u * a.y + 2 * u * k * ctrl.y + k * k * b.y,
+    u * u * a.z + 2 * u * k * ctrl.z + k * k * b.z
+  );
+}
+
 // Little stars in the patch of sky the window actually shows — the dome
 // stars sit too high and wide to ever be seen through the panes
 let windowStarsMat;
@@ -397,7 +411,7 @@ function applyMood(k) {
   starsMat.opacity = THREE.MathUtils.lerp(n.stars, d.stars, k);
   windowStarsMat.opacity = THREE.MathUtils.lerp(0.95, 0, k);
   lerpC(orb.material.color, n.orb, d.orb, k);
-  orb.position.lerpVectors(n.orbPos, d.orbPos, k);
+  arcLerp(orb.position, n.orbPos, SUN_ARC_CTRL, d.orbPos, k);
   moonlight.position.lerpVectors(n.dirPos, d.dirPos, k);
   lerpC(ambient.color, n.ambientColor, d.ambientColor, k);
   ambient.intensity = THREE.MathUtils.lerp(n.ambient, d.ambient, k);
@@ -412,10 +426,11 @@ function applyMood(k) {
   if (refs.deskLamp.shadeMat) {
     refs.deskLamp.shadeMat.emissiveIntensity = THREE.MathUtils.lerp(n.deskGlow, d.deskGlow, k);
   }
-  // Celestial swap: the sun sinks and fades while the crescent moon rises
+  // Celestial swap: the sun sinks and fades while the crescent moon rises,
+  // each along its own curved arc
   orb.material.opacity = k;
   moon.material.opacity = (1 - k) * 0.95;
-  moon.position.lerpVectors(MOON_NIGHT, MOON_DAY, k);
+  arcLerp(moon.position, MOON_NIGHT, MOON_ARC_CTRL, MOON_DAY, k);
   // Sun shafts, glare, and motes only live in the sunset
   for (const child of sunRays.children) {
     child.material.opacity = child.userData.baseOpacity * k;
