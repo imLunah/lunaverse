@@ -168,8 +168,8 @@ function buildDesk(interactives, refs) {
   interactives.push({ object: monitor, action: "computer" });
   refs.monitor = { screen: mScreen };
 
-  const keyboard = placeModel("computerKeyboard", { scale: 3.2 });
-  keyboard.position.set(0.8, TOP, 0.35);
+  const keyboard = placeModel("computerKeyboard", { scale: 3.2 }); // 0.90 wide — spans x ±0.45
+  keyboard.position.set(0.55, TOP, 0.35);
   keyboard.rotation.y = -0.06;
   desk.add(keyboard);
 
@@ -181,15 +181,15 @@ function buildDesk(interactives, refs) {
   // (The contact envelope is retired — contact will get a new home elsewhere.)
 
   // Mouse pad + mouse to the right of the keyboard — the computer earns them
-  const mousePad = new THREE.Mesh(new THREE.CylinderGeometry(0.21, 0.21, 0.014, 28), fabricMat(0x3a3a45));
-  mousePad.position.set(1.32, TOP + 0.007, 0.42);
+  const mousePad = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.19, 0.014, 28), fabricMat(0x3a3a45));
+  mousePad.position.set(1.3, TOP + 0.007, 0.42); // clear of the keyboard (edge at x 1.0)
   mousePad.receiveShadow = true;
   desk.add(mousePad);
   const mouse = new THREE.Group();
   const mouseBody = box(0.11, 0.055, 0.17, mat(0xd9cfc0, { roughness: 0.45 }), 0, 0.028, 0);
   const mouseSeam = box(0.012, 0.02, 0.06, mat(0x8a8078, { roughness: 0.5 }), 0, 0.052, -0.045);
   mouse.add(mouseBody, mouseSeam);
-  mouse.position.set(1.32, TOP + 0.014, 0.44);
+  mouse.position.set(1.3, TOP + 0.014, 0.44);
   mouse.rotation.y = -0.35;
   desk.add(mouse);
 
