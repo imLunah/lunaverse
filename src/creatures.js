@@ -131,50 +131,6 @@ export function buildOwl({ scale = 1, accent = 0xd96f43 } = {}) {
   return { group: owl, update, wings, body, setLookTarget };
 }
 
-/** A butterfly drifting a lazy figure-eight. Returns { group, update(t) } */
-export function buildButterfly({ center = new THREE.Vector3(), radius = 1.2, speed = 0.35 } = {}) {
-  const fly = new THREE.Group();
-  const bodyMat = std(0x4a3428, { roughness: 0.7 });
-  const wingMat = new THREE.MeshStandardMaterial({
-    color: 0xe8a25f,
-    roughness: 0.8,
-    side: THREE.DoubleSide,
-  });
-  const b = new THREE.Mesh(new THREE.CapsuleGeometry(0.015, 0.09, 4, 8), bodyMat);
-  b.rotation.x = Math.PI / 2;
-  fly.add(b);
-  const wingGeo = new THREE.CircleGeometry(0.07, 12);
-  wingGeo.scale(1.5, 1, 1);
-  wingGeo.translate(0.08, 0, 0);
-  const wingL = new THREE.Mesh(wingGeo, wingMat);
-  const wingR = new THREE.Mesh(wingGeo.clone(), wingMat);
-  wingR.rotation.y = Math.PI;
-  fly.add(wingL, wingR);
-
-  const pos = new THREE.Vector3();
-  const prev = new THREE.Vector3();
-
-  function update(t) {
-    const a = t * speed;
-    pos.set(
-      center.x + Math.sin(a * 2) * radius * 0.7,
-      center.y + Math.sin(a * 3.1) * 0.4,
-      center.z + Math.cos(a) * radius
-    );
-    prev.copy(fly.position);
-    fly.position.copy(pos);
-    const dir = pos.clone().sub(prev);
-    if (dir.lengthSq() > 1e-7) {
-      fly.lookAt(pos.clone().add(dir));
-    }
-    const flap = Math.sin(t * 11) * 1.05;
-    wingL.rotation.z = flap;
-    wingR.rotation.z = -flap;
-  }
-
-  return { group: fly, update };
-}
-
 /** A tiny robin that orbits a point (outside the window). Returns { group, update(t) } */
 export function buildBird({ center = new THREE.Vector3(), radius = 2.2, speed = 0.7 } = {}) {
   const bird = new THREE.Group();

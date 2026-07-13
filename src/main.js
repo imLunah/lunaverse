@@ -6,7 +6,7 @@ import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js"
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 import { buildRoom } from "./room.js";
 import { modelsReady } from "./models.js";
-import { buildOwl, buildBird, buildButterfly } from "./creatures.js";
+import { buildOwl, buildBird } from "./creatures.js";
 import { buildSurfaces, createHello, RESUME_W, RESUME_H } from "./surfaces.js";
 import { Choreography, ZONE_OF } from "./choreography.js";
 import { Ambience } from "./audio.js";
@@ -185,28 +185,31 @@ refs.fashion.card.material = new THREE.MeshBasicMaterial({ map: surfaces.style, 
 
 /* ═══════════════ Day / night moods (decision 4C) ═══════════════ */
 
-// "Day" is a dreamy golden sunset: low sun streaming through the window,
-// lamp off, long warm shadows. Night keeps the lamp-lit cabin mood.
+// "Day" is a dreamy golden sunset: the interior stays dim (no lights are on)
+// so the low sun through the window reads golden and blooms. Night keeps the
+// lamp-lit cabin mood, with the moon hanging in the window.
 const MOODS = {
   night: {
     skyTop: new THREE.Color(0x120c1c), skyMid: new THREE.Color(0x2b1c3a), skyBot: new THREE.Color(0x4b2c48),
     stars: 0.8,
-    orb: new THREE.Color(0xfff3d6), orbPos: new THREE.Vector3(6, 22, -60),
+    orb: new THREE.Color(0xdfe9f5), orbPos: new THREE.Vector3(2.8, 11, -60), // the moon, framed by the panes
     ambient: 0.48, ambientColor: new THREE.Color(0x9c8a7a), hemi: 0.22,
     dir: new THREE.Color(0xa8c4ff), dirIntensity: 1.0, dirPos: new THREE.Vector3(8, 16, -14),
     lampLight: 32, lampShade: 0.9, exposure: 1.0, env: 0.14, screens: 0.68,
+    bloom: 0.25, bloomThreshold: 0.88,
     wall: new THREE.Color(0x8a7266), floor: new THREE.Color(0.55, 0.44, 0.36),
     trim: new THREE.Color(0.42, 0.3, 0.22), ceil: new THREE.Color(0x6a5a4c),
   },
   day: {
-    skyTop: new THREE.Color(0x5a6ba8), skyMid: new THREE.Color(0xf2a878), skyBot: new THREE.Color(0xffc188),
+    skyTop: new THREE.Color(0x50619e), skyMid: new THREE.Color(0xf49a62), skyBot: new THREE.Color(0xffb070),
     stars: 0,
-    orb: new THREE.Color(0xffdba0), orbPos: new THREE.Vector3(3.5, 8.5, -60), // low sun, visible through the panes
-    ambient: 0.5, ambientColor: new THREE.Color(0xffd9c0), hemi: 0.25,
-    dir: new THREE.Color(0xffa860), dirIntensity: 4.4, dirPos: new THREE.Vector3(4.5, 6.5, -16), // shallow golden shaft
-    lampLight: 0, lampShade: 0.05, exposure: 1.1, env: 0.32, screens: 1.0,
-    wall: new THREE.Color(0xf7e6cd), floor: new THREE.Color(1.35, 1.05, 0.75), trim: new THREE.Color(0.95, 0.66, 0.45),
-    ceil: new THREE.Color(0xf5ecdc),
+    orb: new THREE.Color(0xffd489), orbPos: new THREE.Vector3(3.5, 8.5, -60), // low sun, visible through the panes
+    ambient: 0.22, ambientColor: new THREE.Color(0xffd9c0), hemi: 0.14,
+    dir: new THREE.Color(0xff9848), dirIntensity: 5.6, dirPos: new THREE.Vector3(4.5, 5.8, -16), // shallow golden shaft
+    lampLight: 0, lampShade: 0.05, exposure: 1.02, env: 0.15, screens: 0.78,
+    bloom: 0.5, bloomThreshold: 0.76,
+    wall: new THREE.Color(0xdcc4a4), floor: new THREE.Color(1.02, 0.78, 0.56), trim: new THREE.Color(0.74, 0.5, 0.34),
+    ceil: new THREE.Color(0xcdbba2),
   },
 };
 
@@ -240,13 +243,12 @@ function applyMood(k) {
   scene.environmentIntensity = THREE.MathUtils.lerp(n.env, d.env, k);
   const sc = THREE.MathUtils.lerp(n.screens, d.screens, k);
   for (const m of screenMats) m.color.setScalar(sc);
+  bloom.strength = THREE.MathUtils.lerp(n.bloom, d.bloom, k);
+  bloom.threshold = THREE.MathUtils.lerp(n.bloomThreshold, d.bloomThreshold, k);
 }
 
-// Day by default — the bright storybook read is the brief
 let moodMix = 1;
 let moodTarget = 1;
-applyMood(moodMix);
-document.body.classList.add("day");
 
 
 // Small owl on the windowsill — clickable: it hoots and says a line, and its
@@ -323,14 +325,6 @@ const bird = buildBird({
 });
 scene.add(bird.group);
 
-// Butterfly drifting near the window (7A)
-const butterfly = buildButterfly({
-  center: new THREE.Vector3(0.9, 3.0, -2.8),
-  radius: 1.1,
-  speed: REDUCED_MOTION ? 0.15 : 0.3,
-});
-scene.add(butterfly.group);
-
 
 /* ═══════════════ Choreography (three beats, decision 3A) ═══════════════ */
 
@@ -353,6 +347,10 @@ const bloom = new UnrealBloomPass(
 );
 composer.addPass(bloom);
 composer.addPass(new OutputPass());
+
+// Day (sunset) by default — applied here because the grade drives bloom too
+applyMood(moodMix);
+document.body.classList.add("day");
 
 /* ═══════════════ UI: loader, modal, hint, audio ═══════════════ */
 
@@ -671,7 +669,6 @@ function tick() {
 
   // Choreography: hover springs, camera travel, reveals, performances
   rig.update(dt);
-  butterfly.update(t);
   document.body.classList.toggle("focused", rig.mode !== "free" && !entering);
 
   // Record spins while the music plays

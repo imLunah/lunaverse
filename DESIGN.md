@@ -49,9 +49,12 @@ music / fashion; furniture carries `userData.zone`) → camera pans to a survey
 pose → click items there for the close-up + reveal. Back (Esc / pill / empty
 click) walks the tiers in reverse. Ollie performs from anywhere.
 
-**Moods:** "day" is a dreamy golden sunset — low sun visible through the
-panes, shallow golden shaft, lamp OFF. Night is the lamp-lit cabin. Texture
-grade is stylized-clean (normal maps at ~half strength), not photoreal grit.
+**Moods:** "day" is a dreamy golden sunset — the interior stays DIM (no
+lights are on) so the low sun through the panes reads golden: low ambient/env
+fill, hot directional shaft, bloom lifts with the mood (strength 0.25 → 0.5,
+threshold drops), unlit screens dim so they never read as lamps. Night is the
+lamp-lit cabin with the moon framed in the window. Texture grade is
+stylized-clean (normal maps at ~half strength), not photoreal grit.
 
 ## Palette
 
@@ -89,7 +92,8 @@ Three-beat interaction pattern (approved 3A, docs/design-plan.md):
 3. **Reveal** — the object performs (lid opens, letter unfolds, frame swings, radio wobbles, owl flaps). Close reverses everything, camera glides home 0.9s.
 
 Object springs ~300ms with slight overshoot. Idle life: fireflies, robin,
-butterfly, candle flicker — ambient, never competing with clickables.
+candle flicker — ambient, never competing with clickables. (The butterfly
+read as a moth at night and is retired.)
 
 `prefers-reduced-motion`: all camera travel becomes 250ms crossfades; idle
 drift amplitude halves; no flights, ever.
