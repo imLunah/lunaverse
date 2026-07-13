@@ -691,10 +691,17 @@ function activateItem(action) {
       // the lid opens onto the résumé — start at the top
       resumeScroll = 0;
       surfaces.resume.offset.y = 1 - RESUME_VIEW;
-      showHint("scroll to read the résumé · click away to close");
+      showHint("click the screen to zoom in");
     }
     srLive.textContent = plainText(action);
   }
+}
+
+/** Third tier: lean into the laptop screen — this is where scroll unlocks. */
+function zoomIntoScreen() {
+  if (!rig.zoomItem()) return false;
+  showHint("scroll to read · click away to step back");
+  return true;
 }
 
 /** The owl performs from its sill: a hoot, a flap, a line of dialogue. */
@@ -722,7 +729,7 @@ let resumeScroll = 0; // 0 = top of the page, 1 = bottom
 window.addEventListener(
   "wheel",
   (e) => {
-    if (rig.mode !== "focused" || rig.action !== "projects") return;
+    if (rig.mode !== "reading" || rig.action !== "projects") return;
     e.preventDefault();
     resumeScroll = THREE.MathUtils.clamp(resumeScroll + e.deltaY * 0.00045, 0, 1);
     surfaces.resume.offset.y = (1 - RESUME_VIEW) * (1 - resumeScroll);
@@ -774,7 +781,14 @@ canvas.addEventListener("click", (e) => {
     return;
   }
 
-  if (rig.mode === "focused") stepBack();
+  if (rig.mode === "focused") {
+    // Clicking the laptop screen leans in to read; anything else steps back
+    if (action === "projects" && rig.action === "projects" && zoomIntoScreen()) return;
+    stepBack();
+    return;
+  }
+
+  if (rig.mode === "reading") stepBack();
 });
 
 backPill.addEventListener("click", stepBack);
@@ -793,7 +807,10 @@ for (const btn of document.querySelectorAll("#sr-nav button")) {
     }
     const z = ZONE_OF[action];
     if (rig.mode === "zone" && rig.zone === z) activateItem(action);
-    else if (rig.mode === "focused") stepBack();
+    else if (rig.mode === "focused") {
+      if (action === "projects" && rig.action === "projects" && zoomIntoScreen()) return;
+      stepBack();
+    } else if (rig.mode === "reading") stepBack();
     else rig.goZone(z);
   });
 }
@@ -940,7 +957,8 @@ function tick() {
     document.body.classList.toggle("can-click", !!(hovered || zoneHover));
   } else {
     hovered = null;
-    document.body.classList.toggle("can-click", rig.mode === "focused"); // clicking steps back
+    // clicking steps back (or, on the laptop, leans in)
+    document.body.classList.toggle("can-click", rig.mode === "focused" || rig.mode === "reading");
   }
 
   composer.render();

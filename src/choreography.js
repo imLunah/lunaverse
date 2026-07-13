@@ -32,6 +32,12 @@ const FOCUS = {
   style: { pos: new THREE.Vector3(3.0, 1.8, 2.3), target: new THREE.Vector3(4.5, 1.5, 2.7) },
 };
 
+// Third tier: lean all the way in. Camera sits on the open screen's normal so
+// the page fills the view — this is where scrolling unlocks (main.js).
+const READ = {
+  projects: { pos: new THREE.Vector3(-3.1, 2.42, -2.97), target: new THREE.Vector3(-3.28, 2.13, -3.67) },
+};
+
 export class Choreography {
   constructor({ camera, interactives, refs, reducedMotion = false }) {
     this.camera = camera;
@@ -112,9 +118,20 @@ export class Choreography {
     return true;
   }
 
-  /** Walk one tier back. Returns "zone", "home", or null. home = { pos, dir }. */
+  /** Lean into the focused item's screen (third tier). Reading unlocks scroll. */
+  zoomItem() {
+    if (this.mode !== "focused" || !READ[this.action]) return false;
+    this._startTravel(READ[this.action], "reading");
+    return true;
+  }
+
+  /** Walk one tier back. Returns "focused", "zone", "home", or null. */
   back(home) {
     if (this.mode === "travel") return null;
+    if (this.mode === "reading") {
+      this._startTravel(FOCUS[this.action], "focused"); // reveal stays open
+      return "focused";
+    }
     if (this.mode === "focused") {
       this.revealTarget = 0;
       this._startTravel(ZONES[this.zone], "zone");
@@ -170,7 +187,7 @@ export class Choreography {
         this.pending = null;
         if (this.mode === "free" || this.mode === "zone") this.action = null;
       }
-    } else if (this.mode === "zone" || this.mode === "focused") {
+    } else if (this.mode === "zone" || this.mode === "focused" || this.mode === "reading") {
       this.camera.position.copy(this.dest.pos);
       this.camera.lookAt(this._q.copy(this.dest.pos).add(this.dest.dir));
     }

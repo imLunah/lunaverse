@@ -34,9 +34,11 @@ the cursor.
 
 **Desk beats:** the monitor plays a self-writing cursive "hello" (a
 hand-authored stroke path drawn on pen-style in `src/surfaces.js`, looping
-draw → hold → fade). The laptop sits closed; focusing it flips the lid open
-onto a scrollable résumé (wheel scrolls `texture.offset.y`; copy in
-`SURFACES.resume`).
+draw → hold → fade). The laptop has THREE tiers: focus flips the lid open,
+clicking the screen leans all the way in ("reading" mode, camera on the
+screen's normal), and only there does the wheel scroll the résumé
+(`texture.offset.y`; copy in `SURFACES.resume`). Back walks reading →
+focused → zone → home.
 
 **Fashion corner (John is into avant-garde fashion):** garment rack with
 sculptural monochrome pieces (black/cream/rust/charcoal), dress form with an
