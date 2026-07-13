@@ -205,43 +205,47 @@ const sunRays = new THREE.Group();
     return new THREE.CanvasTexture(c);
   })();
 
-  // Direction the day sun travels (window → into the room), from MOODS.day.dirPos
-  const shaftDir = new THREE.Vector3(-4.5, -5.8, 16).normalize();
-  const qShaft = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, -1, 0), shaftDir);
-  const beamGeo = new THREE.PlaneGeometry(1, 1);
-  beamGeo.translate(0, -0.5, 0); // hang from the top edge
-  const beams = [
-    { x: 0.55, y: 4.1, w: 0.95, len: 9.5, o: 0.28 },
-    { x: 1.45, y: 4.25, w: 0.7, len: 8.5, o: 0.24 },
-    { x: 2.25, y: 4.0, w: 0.5, len: 9.0, o: 0.2 },
-    { x: 1.4, y: 4.3, w: 2.6, len: 7.5, o: 0.11 }, // wide soft wash behind the crisp beams
-  ];
-  // One sheet per beam; the tick loop rotates each around the shaft axis to
-  // face the camera (axial billboarding) so no angle shows a sheet edge-on
-  // or as a crossing slab.
-  const beamMeshes = [];
-  for (const b of beams) {
-    const m = new THREE.Mesh(
-      beamGeo,
-      new THREE.MeshBasicMaterial({
-        map: rayTex,
-        color: 0xffc27a,
-        transparent: true,
-        opacity: 0,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false,
-        side: THREE.DoubleSide,
-      })
-    );
-    m.userData.baseOpacity = b.o * 1.3; // single sheet carries what the crossed pair did
-    m.scale.set(b.w, b.len, 1);
-    m.position.set(b.x, b.y, -4.1); // inside the curtain/wall planes so nothing clips the sheet
-    m.quaternion.copy(qShaft);
-    sunRays.add(m);
-    beamMeshes.push(m);
+  // The shaft is the window opening extruded along the sun direction — real
+  // world-space geometry, so the light stays put as the camera moves and can
+  // never spill onto the frame or the wall around the opening. Each side face
+  // carries the streaked gradient; the bell falloff softens the prism's edges.
+  const shaftDir = new THREE.Vector3(-4.5, -5.8, 16).normalize(); // from MOODS.day.dirPos
+  const SHAFT_LEN = 9;
+  const nearRing = [
+    [0.3, 1.9],
+    [2.5, 1.9],
+    [2.5, 4.3],
+    [0.3, 4.3],
+  ].map(([x, y]) => new THREE.Vector3(x, y, -4.25));
+  const farRing = nearRing.map((p) => p.clone().addScaledVector(shaftDir, SHAFT_LEN));
+  const pPos = [];
+  const pUv = [];
+  const pIdx = [];
+  for (let i = 0; i < 4; i++) {
+    const a = i, b = (i + 1) % 4;
+    const base = pPos.length / 3;
+    pPos.push(...nearRing[a].toArray(), ...nearRing[b].toArray(), ...farRing[b].toArray(), ...farRing[a].toArray());
+    pUv.push(0, 1, 1, 1, 1, 0, 0, 0); // v=1 at the window (strong), 0 at the far end
+    pIdx.push(base, base + 1, base + 2, base, base + 2, base + 3);
   }
-  sunRays.userData.beams = beamMeshes;
-  sunRays.userData.shaftUp = shaftDir.clone().negate(); // beams hang along local -Y
+  const prismGeo = new THREE.BufferGeometry();
+  prismGeo.setAttribute("position", new THREE.Float32BufferAttribute(pPos, 3));
+  prismGeo.setAttribute("uv", new THREE.Float32BufferAttribute(pUv, 2));
+  prismGeo.setIndex(pIdx);
+  const prism = new THREE.Mesh(
+    prismGeo,
+    new THREE.MeshBasicMaterial({
+      map: rayTex,
+      color: 0xffc27a,
+      transparent: true,
+      opacity: 0,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+    })
+  );
+  prism.userData.baseOpacity = 0.42;
+  sunRays.add(prism);
 
   // Glare blob over the glass — the blown-out window read
   const glareTex = (() => {
@@ -824,10 +828,6 @@ const clock = new THREE.Clock();
 const _lookDir = new THREE.Vector3();
 const _lookTarget = new THREE.Vector3();
 const _gaze = new THREE.Vector3();
-const _bTo = new THREE.Vector3();
-const _bX = new THREE.Vector3();
-const _bZ = new THREE.Vector3();
-const _bM = new THREE.Matrix4();
 const _homePose = { pos: new THREE.Vector3(), dir: new THREE.Vector3() };
 
 function tick() {
@@ -867,21 +867,6 @@ function tick() {
 
   // Record spins while the music plays
   if (ambience.playing) refs.radio.knobs[0].rotation.y += dt * 3.2;
-
-  // Axial billboarding: swing each beam sheet around the shaft axis toward
-  // the camera so no viewpoint catches a sheet edge-on or as a crossing slab
-  if (moodMix > 0.02) {
-    const up = sunRays.userData.shaftUp;
-    for (const b of sunRays.userData.beams) {
-      _bTo.subVectors(camera.position, b.position);
-      _bX.crossVectors(up, _bTo);
-      if (_bX.lengthSq() > 1e-6) {
-        _bX.normalize();
-        _bZ.crossVectors(_bX, up);
-        b.quaternion.setFromRotationMatrix(_bM.makeBasis(_bX, up, _bZ));
-      }
-    }
-  }
 
   // Dust motes drift slowly inside the sun shafts
   if (moodMix > 0.02 && !REDUCED_MOTION) {

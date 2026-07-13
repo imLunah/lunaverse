@@ -53,11 +53,13 @@ click) walks the tiers in reverse. Ollie performs from anywhere.
 
 **Moods:** "day" is a dreamy golden sunset — the interior stays DIM (no
 lights are on) so the low sun through the panes reads golden: low ambient/env
-fill, hot directional shaft, bloom lifts with the mood (strength 0.25 → 0.5,
+fill, hot directional shaft, bloom lifts with the mood (strength 0.25 → 0.45,
 threshold drops), unlit screens dim so they never read as lamps. Visible sun
-RAYS pour through the window: additive gradient beams hung from the panes
-along the light direction, a glare sprite over the glass, dust motes drifting
-in the beam — all fade with the mood. Night is the lamp-lit cabin (floor lamp
+RAYS pour through the window as a world-space light volume — the window
+opening extruded along the sun direction as a prism mesh with a streaked
+additive gradient (never billboarded sheets: those slide over the frame and
+walls as the camera moves) — plus a glare sprite over the glass and dust
+motes drifting in the beam; all fade with the mood. Night is the lamp-lit cabin (floor lamp
 + desk lamp on) with a crescent moon framed in the window. The toggle is a
 slow celestial swap: the sun sinks below the horizon and reddens while the
 crescent rises into the panes. Texture grade is stylized-clean (normal maps
