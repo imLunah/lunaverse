@@ -99,7 +99,8 @@ Three-beat interaction pattern (approved 3A, docs/design-plan.md):
 Object springs ~300ms with slight overshoot. Idle life: the robin outside,
 drifting dust motes in the sun shafts, the owl's blink and cursor-tracking
 gaze — ambient, never competing with clickables. (The butterfly read as a
-moth at night and is retired; the desk candle became a little desk lamp.)
+moth at night and is retired; the desk candle became a Kenney table lamp
+between the laptop and the monitor, its shade emissive after dark.)
 
 `prefers-reduced-motion`: all camera travel becomes 250ms crossfades; idle
 drift amplitude halves; no flights, ever.

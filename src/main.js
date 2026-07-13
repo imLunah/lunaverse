@@ -187,6 +187,18 @@ const sunRays = new THREE.Group();
     gr.addColorStop(1, "rgba(0,0,0,0)");
     g.fillStyle = gr;
     g.fillRect(0, 0, 128, 512);
+    // Carve faint vertical streaks so the sheet reads as a bundle of rays
+    g.globalCompositeOperation = "destination-out";
+    for (let i = 0; i < 7; i++) {
+      const x = (i + 0.5) * 18 + (Math.random() - 0.5) * 10;
+      const w = 4 + Math.random() * 9;
+      const gs = g.createLinearGradient(x - w, 0, x + w, 0);
+      gs.addColorStop(0, "rgba(0,0,0,0)");
+      gs.addColorStop(0.5, `rgba(0,0,0,${0.18 + Math.random() * 0.22})`);
+      gs.addColorStop(1, "rgba(0,0,0,0)");
+      g.fillStyle = gs;
+      g.fillRect(x - w, 0, w * 2, 512);
+    }
     return new THREE.CanvasTexture(c);
   })();
 
@@ -201,28 +213,32 @@ const sunRays = new THREE.Group();
     { x: 2.25, y: 4.0, w: 0.5, len: 9.0, o: 0.2 },
     { x: 1.4, y: 4.3, w: 2.6, len: 7.5, o: 0.11 }, // wide soft wash behind the crisp beams
   ];
-  const _axisY = new THREE.Vector3(0, 1, 0);
+  // One sheet per beam; the tick loop rotates each around the shaft axis to
+  // face the camera (axial billboarding) so no angle shows a sheet edge-on
+  // or as a crossing slab.
+  const beamMeshes = [];
   for (const b of beams) {
-    for (const twist of [0, Math.PI / 2]) {
-      const m = new THREE.Mesh(
-        beamGeo,
-        new THREE.MeshBasicMaterial({
-          map: rayTex,
-          color: 0xffc27a,
-          transparent: true,
-          opacity: 0,
-          blending: THREE.AdditiveBlending,
-          depthWrite: false,
-          side: THREE.DoubleSide,
-        })
-      );
-      m.userData.baseOpacity = b.o * (twist ? 0.4 : 1);
-      m.scale.set(b.w, b.len, 1);
-      m.position.set(b.x, b.y, -4.1); // inside the curtain/wall planes so nothing clips the sheet
-      m.quaternion.copy(qShaft).multiply(new THREE.Quaternion().setFromAxisAngle(_axisY, twist));
-      sunRays.add(m);
-    }
+    const m = new THREE.Mesh(
+      beamGeo,
+      new THREE.MeshBasicMaterial({
+        map: rayTex,
+        color: 0xffc27a,
+        transparent: true,
+        opacity: 0,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        side: THREE.DoubleSide,
+      })
+    );
+    m.userData.baseOpacity = b.o * 1.3; // single sheet carries what the crossed pair did
+    m.scale.set(b.w, b.len, 1);
+    m.position.set(b.x, b.y, -4.1); // inside the curtain/wall planes so nothing clips the sheet
+    m.quaternion.copy(qShaft);
+    sunRays.add(m);
+    beamMeshes.push(m);
   }
+  sunRays.userData.beams = beamMeshes;
+  sunRays.userData.shaftUp = shaftDir.clone().negate(); // beams hang along local -Y
 
   // Glare blob over the glass — the blown-out window read
   const glareTex = (() => {
@@ -378,8 +394,9 @@ function applyMood(k) {
   lamp.light.intensity = THREE.MathUtils.lerp(n.lampLight, d.lampLight, k);
   lamp.shadeMat.emissiveIntensity = THREE.MathUtils.lerp(n.lampShade, d.lampShade, k);
   refs.deskLamp.light.intensity = THREE.MathUtils.lerp(n.deskLamp, d.deskLamp, k);
-  refs.deskLamp.shadeMat.emissiveIntensity = THREE.MathUtils.lerp(n.deskGlow, d.deskGlow, k);
-  lerpC(refs.deskLamp.bulbMat.color, new THREE.Color(0xffe8c0), new THREE.Color(0x9a9088), k);
+  if (refs.deskLamp.shadeMat) {
+    refs.deskLamp.shadeMat.emissiveIntensity = THREE.MathUtils.lerp(n.deskGlow, d.deskGlow, k);
+  }
   // Celestial swap: the sun sinks and fades while the crescent moon rises
   orb.material.opacity = k;
   moon.material.opacity = (1 - k) * 0.95;
@@ -787,6 +804,10 @@ const clock = new THREE.Clock();
 const _lookDir = new THREE.Vector3();
 const _lookTarget = new THREE.Vector3();
 const _gaze = new THREE.Vector3();
+const _bTo = new THREE.Vector3();
+const _bX = new THREE.Vector3();
+const _bZ = new THREE.Vector3();
+const _bM = new THREE.Matrix4();
 const _homePose = { pos: new THREE.Vector3(), dir: new THREE.Vector3() };
 
 function tick() {
@@ -826,6 +847,21 @@ function tick() {
 
   // Record spins while the music plays
   if (ambience.playing) refs.radio.knobs[0].rotation.y += dt * 3.2;
+
+  // Axial billboarding: swing each beam sheet around the shaft axis toward
+  // the camera so no viewpoint catches a sheet edge-on or as a crossing slab
+  if (moodMix > 0.02) {
+    const up = sunRays.userData.shaftUp;
+    for (const b of sunRays.userData.beams) {
+      _bTo.subVectors(camera.position, b.position);
+      _bX.crossVectors(up, _bTo);
+      if (_bX.lengthSq() > 1e-6) {
+        _bX.normalize();
+        _bZ.crossVectors(_bX, up);
+        b.quaternion.setFromRotationMatrix(_bM.makeBasis(_bX, up, _bZ));
+      }
+    }
+  }
 
   // Dust motes drift slowly inside the sun shafts
   if (moodMix > 0.02 && !REDUCED_MOTION) {
@@ -914,7 +950,18 @@ function tick() {
 tick();
 
 // Hover glow needs the async GLB materials once they're in
-modelsReady().then(() => rig.refreshMats());
+modelsReady().then(() => {
+  rig.refreshMats();
+  // Desk lamp shade: the GLB's "lamp" material glows once the mood says so
+  refs.deskLamp.group.traverse((o) => {
+    if (o.isMesh && o.material && o.material.name === "lamp") {
+      o.material = o.material.clone(); // the kit shares materials across models
+      o.material.emissive.setHex(0xf0a35e);
+      refs.deskLamp.shadeMat = o.material;
+    }
+  });
+  applyMood(moodMix); // re-apply so the shade picks up the current mood
+});
 
 // Dev hooks for state inspection (harmless in prod)
 window.__rig = rig;
