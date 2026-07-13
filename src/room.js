@@ -178,34 +178,7 @@ function buildDesk(interactives, refs) {
   deskBooks.rotation.y = 0.5;
   desk.add(deskBooks);
 
-  // Envelope — clickable → contact. Stands leaning by the monitor, looking
-  // like actual mail: flap seams meeting at the wax seal. The letter rises
-  // out on focus.
-  const envelope = new THREE.Group();
-  const envMat = mat(PALETTE.cream, { roughness: 0.6 });
-  const envBody = box(0.5, 0.34, 0.035, envMat, 0, 0.17, 0);
-  const seamMat = mat(0xdcc9a6, { roughness: 0.7 });
-  for (const side of [-1, 1]) {
-    const seam = box(0.31, 0.014, 0.012, seamMat, side * 0.125, 0.255, 0.017);
-    seam.rotation.z = -side * 0.6;
-    envelope.add(seam);
-  }
-  const seal = new THREE.Mesh(new THREE.CircleGeometry(0.05, 20), new THREE.MeshBasicMaterial({ color: PALETTE.ember }));
-  seal.position.set(0, 0.17, 0.024);
-  const letter = new THREE.Mesh(
-    new THREE.PlaneGeometry(0.52, 0.7),
-    new THREE.MeshBasicMaterial({ color: PALETTE.cream, side: THREE.DoubleSide })
-  );
-  letter.scale.setScalar(0.001);
-  letter.position.set(0, 0.05, 0);
-  envelope.add(envBody, seal, letter);
-  envelope.position.set(0.24, TOP, -0.14); // tucked against the monitor's left side
-  envelope.rotation.y = 0.3;
-  envelope.rotation.x = -0.12; // leaning back
-  envelope.traverse((o) => (o.userData.action = "contact"));
-  desk.add(envelope);
-  interactives.push({ object: envelope, action: "contact" });
-  refs.envelope = { letter };
+  // (The contact envelope is retired — contact will get a new home elsewhere.)
 
   // Mouse pad + mouse to the right of the keyboard — the computer earns them
   const mousePad = new THREE.Mesh(new THREE.CylinderGeometry(0.21, 0.21, 0.014, 28), fabricMat(0x3a3a45));

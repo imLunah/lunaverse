@@ -21,14 +21,12 @@ const ZONES = {
   fashion: { pos: new THREE.Vector3(2.3, 2.4, 2.2), target: new THREE.Vector3(4.4, 1.35, 2.7) },
 };
 
-export const ZONE_OF = { projects: "desk", contact: "desk", computer: "desk", about: "gallery", radio: "music", style: "fashion" };
+export const ZONE_OF = { projects: "desk", computer: "desk", about: "gallery", radio: "music", style: "fashion" };
 
 // Close-up item poses within a zone
 const FOCUS = {
   // The laptop's open lid tilts back ~22°, so the camera sits high, along its normal
   projects: { pos: new THREE.Vector3(-2.65, 2.9, -1.65), target: new THREE.Vector3(-3.1, 2.1, -3.55) },
-  // The envelope now stands by the monitor's left side
-  contact: { pos: new THREE.Vector3(-2.0, 2.5, -1.7), target: new THREE.Vector3(-1.96, 2.0, -3.44) },
   // Straight down the monitor screen's normal so the desktop OS fills the view
   computer: { pos: new THREE.Vector3(-1.45, 2.42, -2.55), target: new THREE.Vector3(-1.35, 2.26, -3.59) },
   // Aimed between the frame (z -2) and where the bio card slides out (z ~-1.35)
@@ -199,20 +197,13 @@ export class Choreography {
     // — Beat 3: object reveals track the reveal target
     this.reveal += (this.revealTarget - this.reveal) * Math.min(1, dt * (this.reduced ? 14 : 5));
     const r = this.reveal;
-    const { laptop, envelope, photo } = this.refs;
+    const { laptop, photo } = this.refs;
 
     if (this.action === "projects" || r > 0.002) {
       // The laptop lid hinges open onto the résumé screen
       const pr = this.action === "projects" ? r : 0;
       laptop.lid.rotation.x = -1.95 * pr;
       laptop.screen.visible = pr > 0.03;
-    }
-    if (this.action === "contact" || r > 0.002) {
-      const lr = this.action === "contact" ? r : 0;
-      const letter = envelope.letter;
-      letter.scale.setScalar(Math.max(0.001, lr));
-      letter.position.y = 0.05 + lr * 0.85;
-      if (lr > 0.05) letter.lookAt(this.camera.position);
     }
     if (this.action === "about" || r > 0.002) {
       const br = this.action === "about" ? r : 0;

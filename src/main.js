@@ -409,8 +409,6 @@ refs.monitor.screen.material = helloMat;
 const desktop = createDesktop();
 const desktopMat = new THREE.MeshBasicMaterial({ map: desktop.texture });
 
-const letterMat = new THREE.MeshBasicMaterial({ map: surfaces.letter, side: THREE.DoubleSide });
-refs.envelope.letter.material = letterMat;
 const bioMat = new THREE.MeshBasicMaterial({ map: surfaces.bio, side: THREE.DoubleSide });
 refs.photo.bioPanel.material = bioMat;
 const styleMat = new THREE.MeshBasicMaterial({ map: surfaces.style, side: THREE.DoubleSide });
@@ -418,7 +416,7 @@ refs.fashion.card.material = styleMat;
 
 // Every unlit reading surface dims with the mood — at full white they push
 // past the bloom threshold and wash out into unreadable glare
-const screenMats = [resumeMat, helloMat, desktopMat, letterMat, bioMat, styleMat];
+const screenMats = [resumeMat, helloMat, desktopMat, bioMat, styleMat];
 
 /* ═══════════════ Day / night moods (decision 4C) ═══════════════ */
 
