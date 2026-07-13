@@ -34,10 +34,10 @@ function mat(color, opts = {}) {
   return new THREE.MeshStandardMaterial({ color, roughness: 0.85, metalness: 0.05, ...opts });
 }
 
-// Soft edges everywhere — hard box edges are what read as "low poly"
+// Chunky toy-like edges — the cute read comes from generous corner radii
 function box(w, h, d, material, x = 0, y = 0, z = 0) {
-  const r = Math.min(0.045, Math.min(w, h, d) * 0.24);
-  const m = new THREE.Mesh(new RoundedBoxGeometry(w, h, d, 2, r), material);
+  const r = Math.min(0.085, Math.min(w, h, d) * 0.32);
+  const m = new THREE.Mesh(new RoundedBoxGeometry(w, h, d, 3, r), material);
   m.position.set(x, y, z);
   m.castShadow = true;
   m.receiveShadow = true;
