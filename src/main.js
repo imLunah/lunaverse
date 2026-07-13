@@ -161,7 +161,7 @@ const moon = new THREE.Mesh(
 moon.position.set(2.8, 11, -60);
 scene.add(moon);
 const MOON_NIGHT = new THREE.Vector3(2.8, 11, -60); // framed by the panes
-const MOON_DAY = new THREE.Vector3(2.0, 3.0, -60); // parked low, faded out
+const MOON_DAY = new THREE.Vector3(2.0, -13, -60); // below the frame — it rises into view
 
 /* Sun shafts through the window — cheated volumetrics: additive gradient
    quads hung from the panes along the light direction, a glare sprite over
@@ -174,16 +174,16 @@ const sunRays = new THREE.Group();
     c.height = 512;
     const g = c.getContext("2d");
     let gr = g.createLinearGradient(0, 0, 0, 512);
-    gr.addColorStop(0, "rgba(255,255,255,0.95)");
-    gr.addColorStop(0.55, "rgba(255,255,255,0.4)");
+    gr.addColorStop(0, "rgba(255,255,255,0.8)");
+    gr.addColorStop(0.55, "rgba(255,255,255,0.35)");
     gr.addColorStop(1, "rgba(255,255,255,0)");
     g.fillStyle = gr;
     g.fillRect(0, 0, 128, 512);
+    // Smooth bell across the width — hard side edges read as slabs
     g.globalCompositeOperation = "destination-in";
     gr = g.createLinearGradient(0, 0, 128, 0);
     gr.addColorStop(0, "rgba(0,0,0,0)");
-    gr.addColorStop(0.25, "rgba(0,0,0,1)");
-    gr.addColorStop(0.75, "rgba(0,0,0,1)");
+    gr.addColorStop(0.5, "rgba(0,0,0,1)");
     gr.addColorStop(1, "rgba(0,0,0,0)");
     g.fillStyle = gr;
     g.fillRect(0, 0, 128, 512);
@@ -196,10 +196,10 @@ const sunRays = new THREE.Group();
   const beamGeo = new THREE.PlaneGeometry(1, 1);
   beamGeo.translate(0, -0.5, 0); // hang from the top edge
   const beams = [
-    { x: 0.55, y: 4.1, w: 0.95, len: 9.5, o: 0.4 },
-    { x: 1.45, y: 4.25, w: 0.7, len: 8.5, o: 0.34 },
-    { x: 2.25, y: 4.0, w: 0.5, len: 9.0, o: 0.3 },
-    { x: 1.4, y: 4.3, w: 2.6, len: 7.5, o: 0.16 }, // wide soft wash behind the crisp beams
+    { x: 0.55, y: 4.1, w: 0.95, len: 9.5, o: 0.28 },
+    { x: 1.45, y: 4.25, w: 0.7, len: 8.5, o: 0.24 },
+    { x: 2.25, y: 4.0, w: 0.5, len: 9.0, o: 0.2 },
+    { x: 1.4, y: 4.3, w: 2.6, len: 7.5, o: 0.11 }, // wide soft wash behind the crisp beams
   ];
   const _axisY = new THREE.Vector3(0, 1, 0);
   for (const b of beams) {
@@ -216,9 +216,9 @@ const sunRays = new THREE.Group();
           side: THREE.DoubleSide,
         })
       );
-      m.userData.baseOpacity = b.o * (twist ? 0.65 : 1);
+      m.userData.baseOpacity = b.o * (twist ? 0.4 : 1);
       m.scale.set(b.w, b.len, 1);
-      m.position.set(b.x, b.y, -4.28);
+      m.position.set(b.x, b.y, -4.1); // inside the curtain/wall planes so nothing clips the sheet
       m.quaternion.copy(qShaft).multiply(new THREE.Quaternion().setFromAxisAngle(_axisY, twist));
       sunRays.add(m);
     }
@@ -240,9 +240,11 @@ const sunRays = new THREE.Group();
   const glare = new THREE.Sprite(
     new THREE.SpriteMaterial({ map: glareTex, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false })
   );
-  glare.userData.baseOpacity = 0.55;
-  glare.scale.set(5.6, 4.4, 1);
-  glare.position.set(1.4, 3.2, -4.45);
+  // In front of the wall's inner face and the curtains — behind them, the
+  // room geometry depth-clips the billboard into hard edges as the camera moves
+  glare.userData.baseOpacity = 0.3;
+  glare.scale.set(4.4, 3.5, 1);
+  glare.position.set(1.4, 3.2, -4.05);
   sunRays.add(glare);
 
   // Dust motes drifting in the beam
@@ -271,7 +273,7 @@ const sunRays = new THREE.Group();
       sizeAttenuation: true,
     })
   );
-  motes.userData.baseOpacity = 0.4;
+  motes.userData.baseOpacity = 0.3;
   sunRays.add(motes);
   sunRays.userData.motes = { points: motes, base: motePos.slice(), seed: moteSeed };
 }
@@ -332,7 +334,7 @@ const MOODS = {
   night: {
     skyTop: new THREE.Color(0x120c1c), skyMid: new THREE.Color(0x2b1c3a), skyBot: new THREE.Color(0x4b2c48),
     stars: 0.8,
-    orb: new THREE.Color(0xff8a55), orbPos: new THREE.Vector3(5.2, -7, -60), // the sun, set below the horizon
+    orb: new THREE.Color(0xff8a55), orbPos: new THREE.Vector3(6, -16, -60), // the sun, fully below the window frame
     ambient: 0.48, ambientColor: new THREE.Color(0x9c8a7a), hemi: 0.22,
     dir: new THREE.Color(0xa8c4ff), dirIntensity: 1.0, dirPos: new THREE.Vector3(8, 16, -14),
     lampLight: 32, lampShade: 0.9, deskLamp: 6, deskGlow: 0.9, exposure: 1.0, env: 0.14, screens: 0.68,
@@ -347,7 +349,7 @@ const MOODS = {
     ambient: 0.22, ambientColor: new THREE.Color(0xffd9c0), hemi: 0.14,
     dir: new THREE.Color(0xff9848), dirIntensity: 5.6, dirPos: new THREE.Vector3(4.5, 5.8, -16), // shallow golden shaft
     lampLight: 0, lampShade: 0.05, deskLamp: 0, deskGlow: 0.04, exposure: 1.02, env: 0.15, screens: 0.78,
-    bloom: 0.5, bloomThreshold: 0.76,
+    bloom: 0.45, bloomThreshold: 0.82,
     wall: new THREE.Color(0xdcc4a4), floor: new THREE.Color(1.02, 0.78, 0.56), trim: new THREE.Color(0.74, 0.5, 0.34),
     ceil: new THREE.Color(0xcdbba2),
   },
