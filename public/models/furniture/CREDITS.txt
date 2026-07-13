@@ -1,0 +1,9 @@
+Model credits
+=============
+
+"Sony WH-1000XM4 - Black and brown" by Lauri Grekula
+https://sketchfab.com/3d-models/sony-wh-1000xm4-black-and-brown-18e9aa472d884f95897a3e70ee38026b
+Licensed under CC Attribution 4.0 (https://creativecommons.org/licenses/by/4.0/)
+Simplified and texture-compressed for this site (headphonesXM4.glb).
+
+All other models in this folder: Kenney Furniture Kit (CC0) — see License.txt.
