@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
 import { woodPlanks, woodGrain, plasterBump, fabricBump } from "./textures.js";
+import { placeModel } from "./models.js";
 
 /**
  * The room, rebuilt to the warm wood reference (2026-07-12): wood-paneled
@@ -118,57 +119,49 @@ function helloTexture() {
 
 function buildDesk(interactives, refs) {
   const desk = new THREE.Group();
-  const top = box(3.4, 0.16, 1.5, woodMat(PALETTE.wood), 0, 1.55, 0);
-  const legMat = woodMat(PALETTE.dark);
-  const legs = [
-    [-1.5, 0.775, -0.6],
-    [1.5, 0.775, -0.6],
-    [-1.5, 0.775, 0.6],
-    [1.5, 0.775, 0.6],
-  ].map(([x, y, z]) => box(0.14, 1.55, 0.14, legMat, x, y, z));
-  desk.add(top, ...legs);
+  const TOP = 1.68; // Kenney desk is 0.38 tall × scale 4.4
 
-  // Laptop — clickable → projects. Lid hinges at the back edge; idle is
-  // nearly closed, the focus choreography opens it (beat 3).
+  desk.add(placeModel("desk", { scale: 4.4 }));
+
+  // Laptop — clickable → projects. A content panel rises from it on focus.
   const laptop = new THREE.Group();
-  const base = box(1.15, 0.06, 0.8, mat(PALETTE.dark, { roughness: 0.4 }));
-  const lidGroup = new THREE.Group();
-  lidGroup.position.set(0, 0.03, -0.4);
-  const lid = box(1.15, 0.78, 0.05, mat(PALETTE.dark, { roughness: 0.4 }), 0, 0.39, 0);
+  laptop.add(placeModel("laptop", { scale: 1.9 }));
   const screen = new THREE.Mesh(
-    new THREE.PlaneGeometry(1.02, 0.64),
-    new THREE.MeshBasicMaterial({ color: PALETTE.screen })
+    new THREE.PlaneGeometry(1.5, 0.94),
+    new THREE.MeshBasicMaterial({ color: PALETTE.cream, side: THREE.DoubleSide })
   );
-  screen.position.set(0, 0.39, 0.032);
-  lidGroup.add(lid, screen);
-  lidGroup.rotation.x = 1.42; // idle: nearly closed
-  laptop.add(base, lidGroup);
-  laptop.position.set(-0.85, 1.66, 0.1);
+  screen.scale.setScalar(0.001);
+  screen.position.set(0, 0.6, 0);
+  laptop.add(screen);
+  laptop.position.set(-0.95, TOP, 0.15);
   laptop.rotation.y = 0.24;
-  laptop.traverse((o) => (o.userData.action = "projects"));
+  laptop.userData.action = "projects";
   desk.add(laptop);
   interactives.push({ object: laptop, action: "projects" });
-  refs.laptop = { lidGroup, screen };
+  refs.laptop = { group: laptop, screen };
 
   // Monitor with a handwritten "hello", like the reference
   const monitor = new THREE.Group();
-  const frame = box(1.34, 0.86, 0.07, mat(PALETTE.charcoal, { roughness: 0.35 }), 0, 0.95, 0);
+  monitor.add(placeModel("computerScreen", { scale: 3.4 }));
   const mScreen = new THREE.Mesh(
-    new THREE.PlaneGeometry(1.22, 0.74),
+    new THREE.PlaneGeometry(1.08, 0.62),
     new THREE.MeshBasicMaterial({ map: helloTexture() })
   );
-  mScreen.position.set(0, 0.95, 0.045);
-  const stand = box(0.1, 0.5, 0.1, mat(PALETTE.charcoal, { roughness: 0.35 }), 0, 0.3, -0.06);
-  const foot = box(0.5, 0.05, 0.3, mat(PALETTE.charcoal, { roughness: 0.35 }), 0, 0.05, 0);
-  monitor.add(frame, mScreen, stand, foot);
-  monitor.position.set(0.85, 1.63, -0.35);
+  mScreen.position.set(0, 0.62, 0.1);
+  monitor.add(mScreen);
+  monitor.position.set(0.85, TOP, -0.3);
   monitor.rotation.y = -0.08;
   desk.add(monitor);
 
-  // Keyboard in front of the monitor
-  const keyboard = box(0.85, 0.045, 0.3, mat(0xe7dcc4, { roughness: 0.6 }), 0.8, 1.66, 0.35);
+  const keyboard = placeModel("computerKeyboard", { scale: 3.2 });
+  keyboard.position.set(0.8, TOP, 0.35);
   keyboard.rotation.y = -0.06;
   desk.add(keyboard);
+
+  const deskBooks = placeModel("books", { scale: 3 });
+  deskBooks.position.set(-1.4, TOP, -0.35);
+  deskBooks.rotation.y = 0.5;
+  desk.add(deskBooks);
 
   // Envelope — clickable → contact. The letter rises out on focus.
   const envelope = new THREE.Group();
@@ -183,7 +176,7 @@ function buildDesk(interactives, refs) {
   letter.scale.setScalar(0.001);
   letter.position.set(0, 0.05, 0);
   envelope.add(paper, seal, letter);
-  envelope.position.set(0.15, 1.66, 0.5);
+  envelope.position.set(0.05, TOP, 0.55);
   envelope.rotation.y = -0.35;
   envelope.traverse((o) => (o.userData.action = "contact"));
   desk.add(envelope);
@@ -193,48 +186,7 @@ function buildDesk(interactives, refs) {
   return desk;
 }
 
-function buildOfficeChair() {
-  const chair = new THREE.Group();
-  const gray = mat(0x8a8580, { roughness: 0.7 });
-  const dark = mat(PALETTE.charcoal, { roughness: 0.4, metalness: 0.4 });
-  const seat = box(0.62, 0.1, 0.58, gray, 0, 0.78, 0);
-  const back = box(0.58, 0.75, 0.09, gray, 0, 1.35, 0.28);
-  back.rotation.x = 0.12;
-  const post = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.5, 10), dark);
-  post.position.y = 0.5;
-  chair.add(seat, back, post);
-  for (let i = 0; i < 5; i++) {
-    const a = (i / 5) * Math.PI * 2;
-    const leg = box(0.35, 0.04, 0.06, dark, Math.cos(a) * 0.2, 0.12, Math.sin(a) * 0.2);
-    leg.rotation.y = -a;
-    const wheel = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 8), dark);
-    wheel.position.set(Math.cos(a) * 0.36, 0.05, Math.sin(a) * 0.36);
-    chair.add(leg, wheel);
-  }
-  return chair;
-}
-
-function buildBed() {
-  const bed = new THREE.Group();
-  const frame = box(2.2, 0.35, 3.2, woodMat(PALETTE.wood), 0, 0.28, 0);
-  const headboard = box(2.2, 1.1, 0.14, woodMat(PALETTE.wood), 0, 0.9, -1.55);
-  const mattress = box(2.0, 0.28, 3.0, fabricMat(0xefe4cd), 0, 0.58, 0);
-  // Duvet folded over the lower two-thirds
-  const duvet = box(2.08, 0.18, 2.0, fabricMat(0xe3cba4), 0, 0.72, 0.45);
-  bed.add(frame, headboard, mattress, duvet);
-  const pillowMat = fabricMat(0xf6ecd8);
-  for (const [x, r] of [[-0.5, 0.25], [0.52, -0.2]]) {
-    const p = box(0.78, 0.2, 0.5, pillowMat, x, 0.78, -1.1);
-    p.rotation.z = r * 0.3;
-    p.rotation.y = r;
-    bed.add(p);
-  }
-  // Rust throw cushion, like the reference
-  const cushion = box(0.42, 0.16, 0.42, fabricMat(PALETTE.rust), 0.1, 0.86, -0.35);
-  cushion.rotation.y = 0.6;
-  bed.add(cushion);
-  return bed;
-}
+// Office chair, bed, and bookcase are Kenney models now — placed inline in buildRoom.
 
 function buildRecordPlayer(interactives, refs) {
   const g = new THREE.Group();
@@ -290,32 +242,6 @@ function buildRecordPlayer(interactives, refs) {
   return g;
 }
 
-function buildBookshelf() {
-  const shelf = new THREE.Group();
-  const frame = woodMat(PALETTE.wood);
-  shelf.add(
-    box(0.14, 4.4, 1.1, frame, -1.1, 2.2, 0),
-    box(0.14, 4.4, 1.1, frame, 1.1, 2.2, 0),
-    box(2.34, 0.12, 1.1, frame, 0, 0.5, 0),
-    box(2.34, 0.12, 1.1, frame, 0, 1.75, 0),
-    box(2.34, 0.12, 1.1, frame, 0, 3.0, 0),
-    box(2.34, 0.12, 1.1, frame, 0, 4.35, 0)
-  );
-  const bookColors = [PALETTE.ember, PALETTE.amber, PALETTE.moss, PALETTE.cream, 0x9b6a8f, 0x5a7a8c];
-  const rng = mulberry(7);
-  for (const shelfY of [0.56, 1.81, 3.06]) {
-    let x = -0.95;
-    while (x < 0.85) {
-      const w = 0.1 + rng() * 0.12;
-      const h = 0.55 + rng() * 0.4;
-      const b = box(w, h, 0.7, mat(bookColors[Math.floor(rng() * bookColors.length)], { roughness: 0.9 }), x + w / 2, shelfY + h / 2, 0);
-      b.rotation.z = (rng() - 0.5) * 0.06;
-      shelf.add(b);
-      x += w + 0.025;
-    }
-  }
-  return shelf;
-}
 
 function buildWallShelves() {
   const g = new THREE.Group();
@@ -675,7 +601,7 @@ export function buildRoom() {
 
   // ── Furniture ──
   const desk = buildDesk(interactives, refs);
-  desk.position.set(-2.2, 0, -3.4);
+  desk.position.set(-2.2, 0, -3.0); // Kenney desk is deeper than the old slab
   room.add(desk);
   refs.desk = desk;
   // Zone tag: clicking the desk area pans the camera over (items keep their action tags)
@@ -683,17 +609,15 @@ export function buildRoom() {
     if (!o.userData.action) o.userData.zone = "desk";
   });
 
-  const chair = buildOfficeChair();
-  chair.position.set(-2.3, 0, -2.0);
-  chair.rotation.y = Math.PI + 0.35;
+  const chair = placeModel("chairDesk", { scale: 4.0, rotationY: Math.PI + 0.35 });
+  chair.position.set(-2.3, 0, -1.5);
   room.add(chair);
-  chair.traverse((o) => (o.userData.zone = "desk"));
+  chair.userData.zone = "desk";
 
-  const shelf = buildBookshelf();
-  shelf.position.set(-4.2, 0, 1.6);
-  shelf.rotation.y = Math.PI / 2;
+  const shelf = placeModel("bookcaseOpen", { scale: 4.5, rotationY: Math.PI / 2 });
+  shelf.position.set(-4.35, 0, 1.6);
   room.add(shelf);
-  shelf.traverse((o) => (o.userData.zone = "gallery"));
+  shelf.userData.zone = "gallery";
 
   const wallShelves = buildWallShelves();
   wallShelves.position.set(-2.6, 0, wz + 0.42);
@@ -706,8 +630,8 @@ export function buildRoom() {
   hangingPlant2.position.set(-4.5, 4.6, 4.0);
   room.add(hangingPlant2);
 
-  const bed = buildBed();
-  bed.position.set(3.3, 0, -2.55); // tucked under the window's right edge, like the reference
+  const bed = placeModel("bedDouble", { scale: 1.6 });
+  bed.position.set(3.3, 0, -2.7); // tucked under the window's right edge, like the reference
   room.add(bed);
 
   const player = buildRecordPlayer(interactives, refs);
@@ -749,27 +673,22 @@ export function buildRoom() {
   mirror.position.set(1.0, 1.55, 4.14);
   room.add(mirror);
 
-  // Potted plants
-  const plant = new THREE.Group();
-  const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.22, 0.45, 14), mat(0xc98a5e, { roughness: 0.9 }));
-  pot.position.y = 0.22;
-  pot.castShadow = true;
-  plant.add(pot);
-  const rng = mulberry(3);
-  for (let i = 0; i < 6; i++) {
-    const leaf = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.8 + rng() * 0.5, 6), mat(PALETTE.moss, { roughness: 1 }));
-    leaf.position.set((rng() - 0.5) * 0.3, 0.7 + rng() * 0.25, (rng() - 0.5) * 0.3);
-    leaf.rotation.set((rng() - 0.5) * 0.7, 0, (rng() - 0.5) * 0.7);
-    leaf.castShadow = true;
-    plant.add(leaf);
-  }
+  // Potted plants (Kenney models)
+  const plant = placeModel("pottedPlant", { scale: 2.6 });
   plant.position.set(-4.1, 0, -3.9);
   room.add(plant);
 
-  const plant2 = plant.clone();
-  plant2.scale.setScalar(0.7);
+  const plant2 = placeModel("pottedPlant", { scale: 1.8, rotationY: 1.2 });
   plant2.position.set(-0.05, 0, -4.0);
   room.add(plant2);
+
+  // Little accents on the wall shelves
+  const shelfPlant = placeModel("plantSmall1", { scale: 3 });
+  shelfPlant.position.set(-1.8, 3.15, wz + 0.42);
+  room.add(shelfPlant);
+  const shelfBooks = placeModel("books", { scale: 3, rotationY: -0.2 });
+  shelfBooks.position.set(-3.3, 3.15, wz + 0.42);
+  room.add(shelfBooks);
 
   // Candle on the desk (7A) — the light flickers in the main loop
   const candle = new THREE.Group();
@@ -781,7 +700,7 @@ export function buildRoom() {
   const candleLight = new THREE.PointLight(0xffa54f, 1.6, 2.5, 2);
   candleLight.position.y = 0.34;
   candle.add(wax, flame, candleLight);
-  candle.position.set(-3.5, 1.63, -3.75);
+  candle.position.set(-3.45, 1.68, -3.6);
   room.add(candle);
   refs.candle = { light: candleLight, flame };
 

@@ -31,7 +31,6 @@ export const SURFACES = {
       "the real words are ready.",
     ],
   },
-  owl: "Hoo! I'm Ollie.",
   style: {
     title: "The rack",
     lines: [

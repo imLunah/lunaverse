@@ -5,6 +5,7 @@ import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 import { buildRoom } from "./room.js";
+import { modelsReady } from "./models.js";
 import { buildOwl, buildBird, buildButterfly } from "./creatures.js";
 import { buildSurfaces } from "./surfaces.js";
 import { Choreography, ZONE_OF } from "./choreography.js";
@@ -229,13 +230,6 @@ let moodTarget = 1;
 applyMood(moodMix);
 document.body.classList.add("day");
 
-// Big owl on top of the bookshelf — clickable
-const ollie = buildOwl({ scale: 1.05 });
-ollie.group.position.set(-4.2, 4.95, 1.6);
-ollie.group.rotation.y = Math.PI / 2.6;
-ollie.group.traverse((o) => (o.userData.action = "owl"));
-scene.add(ollie.group);
-interactives.push({ object: ollie.group, action: "owl" });
 
 // Small owl on the windowsill
 const smallOwl = buildOwl({ scale: 0.5, accent: 0xf0a35e });
@@ -259,20 +253,13 @@ const butterfly = buildButterfly({
 });
 scene.add(butterfly.group);
 
-// Ollie's speech bubble (shows during the owl performance)
-const bubble = new THREE.Sprite(
-  new THREE.SpriteMaterial({ map: surfaces.bubble, transparent: true, opacity: 0, depthWrite: false })
-);
-bubble.position.set(-3.55, 5.15, 1.7);
-bubble.scale.set(0.001, 0.001, 1);
-scene.add(bubble);
 
 /* ═══════════════ Choreography (three beats, decision 3A) ═══════════════ */
 
 const rig = new Choreography({
   camera,
   interactives,
-  refs: { ...refs, ollie },
+  refs,
   reducedMotion: REDUCED_MOTION,
 });
 
@@ -462,12 +449,6 @@ canvas.addEventListener("click", (e) => {
   const zone = hit ? findZone(hit) : null;
   if (action || zone) markInteracted();
 
-  // Ollie performs from anywhere
-  if (action === "owl") {
-    rig.performOwl();
-    ambience.hoot();
-    return;
-  }
 
   if (rig.mode === "free") {
     // Tier 1: clicking a zone (or anything in it) pans the camera over
@@ -504,11 +485,6 @@ for (const btn of document.querySelectorAll("#sr-nav button")) {
   btn.addEventListener("click", () => {
     if (rig.traveling) return;
     markInteracted();
-    if (action === "owl") {
-      rig.performOwl();
-      ambience.hoot();
-      return;
-    }
     const z = ZONE_OF[action];
     if (rig.mode === "zone" && rig.zone === z) activateItem(action);
     else if (rig.mode === "focused") stepBack();
@@ -555,7 +531,7 @@ function tick() {
   }
 
   // Choreography: hover springs, camera travel, reveals, performances
-  rig.update(dt, bubble);
+  rig.update(dt);
   butterfly.update(t);
   document.body.classList.toggle("focused", rig.mode !== "free" && !entering);
 
@@ -577,7 +553,6 @@ function tick() {
     applyMood(moodMix);
   }
 
-  ollie.update(t, dt);
   smallOwl.update(t + 5, dt);
   bird.update(t);
 
@@ -609,6 +584,9 @@ function tick() {
 }
 
 tick();
+
+// Hover glow needs the async GLB materials once they're in
+modelsReady().then(() => rig.refreshMats());
 
 // Dev hook for state inspection (harmless in prod)
 window.__rig = rig;

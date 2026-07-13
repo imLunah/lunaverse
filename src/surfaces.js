@@ -127,22 +127,6 @@ export function buildSurfaces() {
     }
   });
 
-  // Owl speech bubble
-  const bubble = makeCanvas(512, 256, (g, w, h) => {
-    g.fillStyle = "rgba(253,246,233,0.97)";
-    g.beginPath();
-    g.roundRect(16, 16, w - 32, h - 90, 40);
-    g.fill();
-    g.beginPath();
-    g.moveTo(w / 2 - 26, h - 76);
-    g.lineTo(w / 2, h - 20);
-    g.lineTo(w / 2 + 26, h - 76);
-    g.fill();
-    g.fillStyle = INK;
-    g.font = "600 54px Fraunces, Georgia, serif";
-    g.textAlign = "center";
-    g.fillText(SURFACES.owl, w / 2, 112);
-  });
 
-  return { screen, letter, bio, bubble, style };
+  return { screen, letter, bio, style };
 }

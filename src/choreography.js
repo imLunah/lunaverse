@@ -25,8 +25,8 @@ export const ZONE_OF = { projects: "desk", contact: "desk", about: "gallery", ra
 
 // Close-up item poses within a zone
 const FOCUS = {
-  projects: { pos: new THREE.Vector3(-2.85, 2.25, -1.45), target: new THREE.Vector3(-3.05, 2.0, -3.3) },
-  contact: { pos: new THREE.Vector3(-2.0, 2.6, -1.5), target: new THREE.Vector3(-2.05, 2.1, -2.9) },
+  projects: { pos: new THREE.Vector3(-3.05, 2.35, -1.1), target: new THREE.Vector3(-3.15, 1.95, -2.85) },
+  contact: { pos: new THREE.Vector3(-2.15, 2.55, -0.9), target: new THREE.Vector3(-2.15, 2.0, -2.45) },
   about: { pos: new THREE.Vector3(-3.15, 3.35, -2.0), target: new THREE.Vector3(-4.6, 3.35, -2.0) },
   style: { pos: new THREE.Vector3(3.0, 1.8, 2.3), target: new THREE.Vector3(4.5, 1.5, 2.7) },
 };
@@ -67,7 +67,6 @@ export class Choreography {
 
     // In-place performances
     this.radioT = -1;
-    this.owlT = -1;
 
     this._v = new THREE.Vector3();
     this._q = new THREE.Vector3();
@@ -132,11 +131,17 @@ export class Choreography {
     this.radioT = 0;
   }
 
-  performOwl() {
-    this.owlT = 0;
+  /** Re-collect hover materials — call after async GLB models finish loading. */
+  refreshMats() {
+    for (const h of this.hover.values()) {
+      h.mats.length = 0;
+      h.group.traverse((o) => {
+        if (o.isMesh && o.material && o.material.isMeshStandardMaterial) h.mats.push(o.material);
+      });
+    }
   }
 
-  update(dt, bubble) {
+  update(dt) {
     // — Beat 1: hover glow + spring scale
     for (const h of this.hover.values()) {
       h.k += (h.targetK - h.k) * Math.min(1, dt * 9);
@@ -175,7 +180,11 @@ export class Choreography {
     const { laptop, envelope, photo } = this.refs;
 
     if (this.action === "projects" || r > 0.002) {
-      laptop.lidGroup.rotation.x = THREE.MathUtils.lerp(1.42, -0.28, this.action === "projects" ? r : 0);
+      const pr = this.action === "projects" ? r : 0;
+      const panel = laptop.screen;
+      panel.scale.setScalar(Math.max(0.001, pr));
+      panel.position.y = 0.55 + pr * 0.55;
+      if (pr > 0.05) panel.lookAt(this.camera.position);
     }
     if (this.action === "contact" || r > 0.002) {
       const lr = this.action === "contact" ? r : 0;
@@ -219,24 +228,5 @@ export class Choreography {
       }
     }
 
-    if (this.owlT >= 0) {
-      this.owlT += dt / 1.6;
-      const p = Math.min(this.owlT, 1);
-      const flap = Math.abs(Math.sin(p * Math.PI * 4)) * (1 - p);
-      const owl = this.refs.ollie;
-      for (const wing of owl.wings) {
-        wing.rotation.z = wing.userData.side * (0.25 + flap * 1.0);
-      }
-      owl.group.rotation.x = Math.sin(p * Math.PI) * 0.14;
-      if (bubble) {
-        const bs = Math.sin(Math.min(p * 1.25, 1) * Math.PI);
-        bubble.scale.set(1.15 * bs, 0.58 * bs, 1);
-        bubble.material.opacity = Math.min(1, bs * 1.6);
-      }
-      if (p >= 1) {
-        owl.group.rotation.x = 0;
-        this.owlT = -1;
-      }
-    }
   }
 }
