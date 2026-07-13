@@ -156,33 +156,34 @@ function crescentTexture() {
 }
 const moon = new THREE.Mesh(
   new THREE.PlaneGeometry(5.4, 5.4),
-  new THREE.MeshBasicMaterial({ map: crescentTexture(), transparent: true, opacity: 0, depthWrite: false })
+  new THREE.MeshBasicMaterial({ map: crescentTexture(), transparent: true, opacity: 0.95, depthWrite: false })
 );
 moon.position.set(2.8, 11, -60);
 scene.add(moon);
 const MOON_NIGHT = new THREE.Vector3(2.8, 11, -60); // framed by the panes
 const MOON_DAY = new THREE.Vector3(2.0, -13, -60); // below the frame — it rises into view
 
-// Celestial bodies travel arcs, not elevators, and the sky always rotates the
-// same way. Dusk: the sun exits curving down-right, the moon rises in from
-// the lower left. Dawn: the moon exits curving down-right, the sun rises in
-// from the lower left. The toggle points each body's off-screen endpoint and
-// control at the correct side before the crossfade runs.
-const sunPath = { from: new THREE.Vector3(6, -16, -60), ctrl: new THREE.Vector3(12, -2, -60) }; // night-side end
-const moonPath = { to: new THREE.Vector3(2, -13, -60), ctrl: new THREE.Vector3(-6, -1, -60) }; // day-side end
+// Celestial bodies travel arcs at full opacity — they move away rather than
+// fade. The leaving body sweeps right and UP, out past the window's top-right
+// corner; the entering body comes in from the upper left, curving right and
+// DOWN into its perch. Off-screen parking spots sit above/beside the patch of
+// sky any camera pose can see through the panes. Initialized to the dawn
+// config so a day-mode load parks the moon hidden off to the right.
+const sunPath = { from: new THREE.Vector3(-14, 22, -60), ctrl: new THREE.Vector3(-4, 16, -60) }; // night-side end
+const moonPath = { to: new THREE.Vector3(15, 26, -60), ctrl: new THREE.Vector3(13, 12, -60) }; // day-side end
 function aimCelestialPaths(towardDay) {
   if (towardDay) {
-    // dawn: sun in from the left, moon out to the right
-    sunPath.from.set(-8, -14, -60);
-    sunPath.ctrl.set(-9, 1, -60);
-    moonPath.to.set(10, -12, -60);
-    moonPath.ctrl.set(10, 3, -60);
+    // dawn: moon leaves up-right, sun sweeps in from the upper left
+    sunPath.from.set(-14, 22, -60);
+    sunPath.ctrl.set(-4, 16, -60);
+    moonPath.to.set(15, 26, -60);
+    moonPath.ctrl.set(13, 12, -60);
   } else {
-    // dusk: sun out to the right, moon in from the left
-    sunPath.from.set(6, -16, -60);
-    sunPath.ctrl.set(12, -2, -60);
-    moonPath.to.set(2, -13, -60);
-    moonPath.ctrl.set(-6, -1, -60);
+    // dusk: sun leaves up-right, moon sweeps in from the upper left
+    sunPath.from.set(15, 25, -60);
+    sunPath.ctrl.set(13.5, 10, -60);
+    moonPath.to.set(-14, 24, -60);
+    moonPath.ctrl.set(0, 15, -60);
   }
 }
 function arcLerp(out, a, ctrl, b, k) {
@@ -443,10 +444,8 @@ function applyMood(k) {
   if (refs.deskLamp.shadeMat) {
     refs.deskLamp.shadeMat.emissiveIntensity = THREE.MathUtils.lerp(n.deskGlow, d.deskGlow, k);
   }
-  // Celestial swap: the sun sinks and fades while the crescent moon rises,
-  // each along its own curved arc
-  orb.material.opacity = k;
-  moon.material.opacity = (1 - k) * 0.95;
+  // Celestial swap: no fading — each body physically travels its arc out of
+  // (or into) the sky the window frames
   arcLerp(moon.position, MOON_NIGHT, moonPath.ctrl, moonPath.to, k);
   // Sun shafts, glare, and motes only live in the sunset
   for (const child of sunRays.children) {
