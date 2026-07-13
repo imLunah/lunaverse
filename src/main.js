@@ -1087,7 +1087,14 @@ function tick() {
   // Owls work nights: asleep through the sunset — but never mid-flight
   smallOwl.setSleep(owlFlight.t >= 0 ? 0 : moodMix);
   smallOwl.update(t + 5, dt);
-  bird.update(t);
+
+  // The robin only flies in daylight — it scales out as dusk falls
+  const birdK = THREE.MathUtils.clamp((moodMix - 0.3) * 4, 0, 1);
+  bird.group.visible = birdK > 0.01;
+  if (bird.group.visible) {
+    bird.group.scale.setScalar(birdK);
+    bird.update(t);
+  }
 
   // Zzz's rise and fade in a loop while the owl sleeps — anchored to whichever
   // perch he's on, and held back until he's actually landed
