@@ -45,8 +45,8 @@ const camera = new THREE.PerspectiveCamera(68, window.innerWidth / window.innerH
 /* First-person standpoint (decision FP, 2026-07-12): you stand IN the room at
    eye height and drag to look around — no more orbiting a dollhouse. */
 // Furniture is ~2× real-world scale, so eye height is too (desk tops sit at 1.6)
-const STAND = new THREE.Vector3(1.9, 3.05, 3.4);
-const ENTER_FROM = new THREE.Vector3(6.2, 3.2, 3.4); // stepping in from the door side
+const STAND = new THREE.Vector3(1.5, 3.0, 2.6);
+const ENTER_FROM = new THREE.Vector3(-1.2, 3.1, 3.5); // stepping in from the door
 const CORNER_FOCUS = new THREE.Vector3(-1.6, 2.1, -1.8);
 const BASE_YAW = Math.atan2(CORNER_FOCUS.x - STAND.x, CORNER_FOCUS.z - STAND.z);
 const YAW_RANGE = 2.35; // the room now wraps around you — let the head turn
@@ -58,6 +58,7 @@ const look = {
   targetYaw: BASE_YAW,
   targetPitch: 0.02,
   dragging: false,
+  dragDistance: 0, // suppresses the click browsers fire after a look-drag
   lastX: 0,
   lastY: 0,
   enabled: false, // until the user "comes in"
@@ -66,6 +67,7 @@ const look = {
 canvas.addEventListener("pointerdown", (e) => {
   if (!look.enabled || (typeof rig !== "undefined" && rig.mode !== "free")) return;
   look.dragging = true;
+  look.dragDistance = 0;
   look.lastX = e.clientX;
   look.lastY = e.clientY;
   canvas.setPointerCapture(e.pointerId);
@@ -251,8 +253,8 @@ scene.add(bird.group);
 
 // Butterfly drifting near the window (7A)
 const butterfly = buildButterfly({
-  center: new THREE.Vector3(1.2, 3.1, -3.2),
-  radius: 1.4,
+  center: new THREE.Vector3(0.9, 3.0, -2.8),
+  radius: 1.1,
   speed: REDUCED_MOTION ? 0.15 : 0.3,
 });
 scene.add(butterfly.group);
@@ -261,7 +263,7 @@ scene.add(butterfly.group);
 const bubble = new THREE.Sprite(
   new THREE.SpriteMaterial({ map: surfaces.bubble, transparent: true, opacity: 0, depthWrite: false })
 );
-bubble.position.set(-3.55, 5.45, 1.7);
+bubble.position.set(-3.55, 5.15, 1.7);
 bubble.scale.set(0.001, 0.001, 1);
 scene.add(bubble);
 
@@ -400,6 +402,7 @@ canvas.addEventListener("pointermove", (e) => {
   pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
   if (look.dragging) {
     // Grab-the-world: drag right looks left
+    look.dragDistance += Math.abs(e.clientX - look.lastX) + Math.abs(e.clientY - look.lastY);
     look.targetYaw += (e.clientX - look.lastX) * 0.0028;
     look.targetPitch += (e.clientY - look.lastY) * 0.0024;
     look.targetYaw = THREE.MathUtils.clamp(look.targetYaw, BASE_YAW - YAW_RANGE, BASE_YAW + YAW_RANGE);
@@ -445,6 +448,10 @@ function activateItem(action) {
 
 canvas.addEventListener("click", (e) => {
   if (modal.classList.contains("open") || rig.traveling || entering) return;
+  if (look.dragDistance > 6) {
+    look.dragDistance = 0; // that was a look-around, not a click
+    return;
+  }
   // Raycast from the click itself so taps (no hover) work too
   pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
   pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;

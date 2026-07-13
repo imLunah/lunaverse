@@ -15,10 +15,10 @@ const EASE = (k) => 1 - Math.pow(1 - k, 3); // ease-out cubic
 
 // Mid-distance zone poses: where you stand to survey each area
 const ZONES = {
-  desk: { pos: new THREE.Vector3(-2.0, 3.0, 0.9), target: new THREE.Vector3(-2.3, 1.5, -3.4) },
+  desk: { pos: new THREE.Vector3(-2.0, 3.0, 0.7), target: new THREE.Vector3(-2.3, 1.5, -3.4) },
   gallery: { pos: new THREE.Vector3(-2.2, 3.5, -1.9), target: new THREE.Vector3(-4.6, 3.3, -2.0) },
-  music: { pos: new THREE.Vector3(5.4, 2.7, 1.9), target: new THREE.Vector3(8.1, 0.9, 1.9) },
-  fashion: { pos: new THREE.Vector3(5.3, 2.7, 4.5), target: new THREE.Vector3(8.3, 1.4, 4.7) },
+  music: { pos: new THREE.Vector3(2.6, 2.5, 0.4), target: new THREE.Vector3(4.4, 0.85, 0.4) },
+  fashion: { pos: new THREE.Vector3(2.3, 2.4, 2.2), target: new THREE.Vector3(4.4, 1.35, 2.7) },
 };
 
 export const ZONE_OF = { projects: "desk", contact: "desk", about: "gallery", radio: "music", style: "fashion" };
@@ -28,7 +28,7 @@ const FOCUS = {
   projects: { pos: new THREE.Vector3(-2.85, 2.25, -1.45), target: new THREE.Vector3(-3.05, 2.0, -3.3) },
   contact: { pos: new THREE.Vector3(-2.0, 2.6, -1.5), target: new THREE.Vector3(-2.05, 2.1, -2.9) },
   about: { pos: new THREE.Vector3(-3.15, 3.35, -2.0), target: new THREE.Vector3(-4.6, 3.35, -2.0) },
-  style: { pos: new THREE.Vector3(6.1, 1.95, 4.4), target: new THREE.Vector3(8.4, 1.5, 4.7) },
+  style: { pos: new THREE.Vector3(3.0, 1.8, 2.3), target: new THREE.Vector3(4.5, 1.5, 2.7) },
 };
 
 export class Choreography {

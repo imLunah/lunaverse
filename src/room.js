@@ -26,9 +26,10 @@ const PALETTE = {
   rust: 0x7a3f28,
 };
 
-// Room shell: x spans -5..9, z spans -5..7, walls 6 high
-const RX = 14, RZ = 12, CX = 2, CZ = 1, WALL_H = 6;
-const BACK_Z = -5 + 0.15;
+// Compact shell (design-review follow-up): x -5..5, z -4.5..4.5, snug ceiling.
+// Everything within a few steps — the reference rooms are small and dense.
+const RX = 10, RZ = 9, CX = 0, CZ = 0, WALL_H = 5.7;
+const BACK_Z = -RZ / 2 + 0.15;
 
 function mat(color, opts = {}) {
   return new THREE.MeshStandardMaterial({ color, roughness: 0.85, metalness: 0.05, ...opts });
@@ -603,24 +604,24 @@ export function buildRoom() {
   room.add(floor);
 
   const rugMat = mat(0xe0836a, { roughness: 1, bumpMap: FABRIC, bumpScale: 0.4 }); // flat coral, woven feel
-  const rug = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 2.6, 0.05, 64), rugMat);
-  rug.position.set(0.6, 0.03, 0.8);
+  const rug = new THREE.Mesh(new THREE.CylinderGeometry(1.95, 1.95, 0.05, 64), rugMat);
+  rug.position.set(0.2, 0.03, 0.3);
   rug.receiveShadow = true;
-  const rugTrim = new THREE.Mesh(new THREE.TorusGeometry(2.3, 0.045, 8, 60), mat(PALETTE.rugTrim, { roughness: 1 }));
+  const rugTrim = new THREE.Mesh(new THREE.TorusGeometry(1.72, 0.045, 8, 60), mat(PALETTE.rugTrim, { roughness: 1 }));
   rugTrim.rotation.x = Math.PI / 2;
-  rugTrim.position.set(0.6, 0.06, 0.8);
+  rugTrim.position.set(0.2, 0.06, 0.3);
   room.add(rug, rugTrim);
 
   // Back wall with the window hole (window unchanged at x 1.4)
   const winW = 2.6, winH = 2.8, winCx = 1.4, winCy = 3.1;
   const wz = BACK_Z;
   const leftW = winCx - winW / 2 - -5; // -5 .. 0.1
-  const rightW = 9 - (winCx + winW / 2); // 2.7 .. 9
+  const rightW = 5 - (winCx + winW / 2); // 2.7 .. 5
   room.add(
     box(RX, winCy - winH / 2, 0.3, wallMat, CX, (winCy - winH / 2) / 2, wz),
     box(RX, WALL_H - (winCy + winH / 2), 0.3, wallMat, CX, (WALL_H + winCy + winH / 2) / 2, wz),
     box(leftW, winH, 0.3, wallMat, -5 + leftW / 2, winCy, wz),
-    box(rightW, winH, 0.3, wallMat, 9 - rightW / 2, winCy, wz)
+    box(rightW, winH, 0.3, wallMat, 5 - rightW / 2, winCy, wz)
   );
 
   const win = buildWindow();
@@ -634,13 +635,13 @@ export function buildRoom() {
   // Remaining shell: left, right, near walls + ceiling with beams
   room.add(
     box(0.3, WALL_H, RZ, wallMat, -4.85, WALL_H / 2, CZ),
-    box(0.3, WALL_H, RZ, wallMat, 8.85, WALL_H / 2, CZ),
-    box(RX, WALL_H, 0.3, wallMat, CX, WALL_H / 2, 6.85)
+    box(0.3, WALL_H, RZ, wallMat, 4.85, WALL_H / 2, CZ),
+    box(RX, WALL_H, 0.3, wallMat, CX, WALL_H / 2, 4.35)
   );
   const ceiling = box(RX, 0.3, RZ, ceilMat, CX, WALL_H + 0.15, CZ);
   ceiling.castShadow = false;
   room.add(ceiling);
-  for (const bx of [-2.2, 2, 6.2]) {
+  for (const bx of [-3, 0, 3]) {
     room.add(box(0.28, 0.24, RZ, woodMat(PALETTE.wood), bx, WALL_H - 0.12, CZ));
   }
 
@@ -648,11 +649,11 @@ export function buildRoom() {
   room.add(
     box(RX, 0.3, 0.12, trimMat, CX, 0.15, wz + 0.21),
     box(0.12, 0.3, RZ, trimMat, -4.64, 0.15, CZ),
-    box(0.12, 0.3, RZ, trimMat, 8.64, 0.15, CZ),
-    box(RX, 0.3, 0.12, trimMat, CX, 0.15, 6.64),
+    box(0.12, 0.3, RZ, trimMat, 4.64, 0.15, CZ),
+    box(RX, 0.3, 0.12, trimMat, CX, 0.15, 4.14),
     box(RX, 0.1, 0.08, trimMat, CX, 2.65, wz + 0.19),
     box(0.08, 0.1, RZ, trimMat, -4.66, 2.65, CZ),
-    box(0.08, 0.1, RZ, trimMat, 8.66, 2.65, CZ)
+    box(0.08, 0.1, RZ, trimMat, 4.66, 2.65, CZ)
   );
 
   // Door on the right wall
@@ -668,7 +669,8 @@ export function buildRoom() {
   const knob = new THREE.Mesh(new THREE.SphereGeometry(0.08, 12, 10), mat(PALETTE.amber, { roughness: 0.4, metalness: 0.4 }));
   knob.position.set(-0.11, 2.0, 0.6);
   door.add(knob);
-  door.position.set(8.68, 0, -1.4);
+  door.position.set(-1.4, 0, 4.26);
+  door.rotation.y = Math.PI / 2; // now lives on the near wall
   room.add(door);
 
   // ── Furniture ──
@@ -701,15 +703,15 @@ export function buildRoom() {
   hangingPlant.position.set(-0.4, 4.5, wz + 0.5);
   room.add(hangingPlant);
   const hangingPlant2 = buildHangingPlant();
-  hangingPlant2.position.set(-4.55, 4.7, 4.4);
+  hangingPlant2.position.set(-4.5, 4.6, 4.0);
   room.add(hangingPlant2);
 
   const bed = buildBed();
-  bed.position.set(5.2, 0, -3.2);
+  bed.position.set(3.3, 0, -2.55); // tucked under the window's right edge, like the reference
   room.add(bed);
 
   const player = buildRecordPlayer(interactives, refs);
-  player.position.set(8.1, 0, 1.9);
+  player.position.set(4.35, 0, 0.4);
   player.rotation.y = -Math.PI / 2;
   room.add(player);
   player.traverse((o) => {
@@ -717,16 +719,16 @@ export function buildRoom() {
   });
 
   const fashion = buildFashionCorner(interactives, refs);
-  fashion.position.set(8.2, 0, 4.6);
+  fashion.position.set(4.15, 0, 2.6);
   room.add(fashion);
 
   const skateboard = buildSkateboard();
-  skateboard.position.set(7.2, 0.28, 6.4);
-  skateboard.rotation.set(-1.15, 0, 0.05);
+  skateboard.position.set(-3.1, 0.12, 3.55); // parked flat by the door
+  skateboard.rotation.set(0, 0.55, 0);
   room.add(skateboard);
 
   const lamp = buildLamp();
-  lamp.group.position.set(3.6, 0, -4.0);
+  lamp.group.position.set(-4.1, 0, 3.3); // front-left corner, clear of the bed
   room.add(lamp.group);
 
   const photo = buildPhotoFrame(interactives, refs);
@@ -744,7 +746,7 @@ export function buildRoom() {
   mGlass.position.z = -0.05;
   mGlass.rotation.y = Math.PI;
   mirror.add(mFrame, mGlass);
-  mirror.position.set(5.6, 1.55, 6.62);
+  mirror.position.set(1.0, 1.55, 4.14);
   room.add(mirror);
 
   // Potted plants
@@ -766,7 +768,7 @@ export function buildRoom() {
 
   const plant2 = plant.clone();
   plant2.scale.setScalar(0.7);
-  plant2.position.set(2.9, 0, -4.3);
+  plant2.position.set(-0.05, 0, -4.0);
   room.add(plant2);
 
   // Candle on the desk (7A) — the light flickers in the main loop
