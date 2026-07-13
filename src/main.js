@@ -163,11 +163,28 @@ scene.add(moon);
 const MOON_NIGHT = new THREE.Vector3(2.8, 11, -60); // framed by the panes
 const MOON_DAY = new THREE.Vector3(2.0, -13, -60); // below the frame — it rises into view
 
-// Celestial bodies travel arcs, not elevators: each path bends through a
-// laterally offset control point so the sweep reads circular. The sun sets
-// curving down-right; the moon rises curving in from the lower left.
-const SUN_ARC_CTRL = new THREE.Vector3(12, -2, -60);
-const MOON_ARC_CTRL = new THREE.Vector3(-6, -1, -60);
+// Celestial bodies travel arcs, not elevators, and the sky always rotates the
+// same way. Dusk: the sun exits curving down-right, the moon rises in from
+// the lower left. Dawn: the moon exits curving down-right, the sun rises in
+// from the lower left. The toggle points each body's off-screen endpoint and
+// control at the correct side before the crossfade runs.
+const sunPath = { from: new THREE.Vector3(6, -16, -60), ctrl: new THREE.Vector3(12, -2, -60) }; // night-side end
+const moonPath = { to: new THREE.Vector3(2, -13, -60), ctrl: new THREE.Vector3(-6, -1, -60) }; // day-side end
+function aimCelestialPaths(towardDay) {
+  if (towardDay) {
+    // dawn: sun in from the left, moon out to the right
+    sunPath.from.set(-8, -14, -60);
+    sunPath.ctrl.set(-9, 1, -60);
+    moonPath.to.set(10, -12, -60);
+    moonPath.ctrl.set(10, 3, -60);
+  } else {
+    // dusk: sun out to the right, moon in from the left
+    sunPath.from.set(6, -16, -60);
+    sunPath.ctrl.set(12, -2, -60);
+    moonPath.to.set(2, -13, -60);
+    moonPath.ctrl.set(-6, -1, -60);
+  }
+}
 function arcLerp(out, a, ctrl, b, k) {
   const u = 1 - k;
   out.set(
@@ -376,7 +393,7 @@ const MOODS = {
   night: {
     skyTop: new THREE.Color(0x120c1c), skyMid: new THREE.Color(0x2b1c3a), skyBot: new THREE.Color(0x4b2c48),
     stars: 0.8,
-    orb: new THREE.Color(0xff8a55), orbPos: new THREE.Vector3(6, -16, -60), // the sun, fully below the window frame
+    orb: new THREE.Color(0xff8a55), // the setting sun's color mid-transition; its path lives in sunPath
     ambient: 0.48, ambientColor: new THREE.Color(0x9c8a7a), hemi: 0.22,
     dir: new THREE.Color(0xa8c4ff), dirIntensity: 0.5, dirPos: new THREE.Vector3(8, 16, -14),
     lampLight: 32, lampShade: 0.9, deskLamp: 6, deskGlow: 0.9, exposure: 1.0, env: 0.14, screens: 0.68,
@@ -411,7 +428,7 @@ function applyMood(k) {
   starsMat.opacity = THREE.MathUtils.lerp(n.stars, d.stars, k);
   windowStarsMat.opacity = THREE.MathUtils.lerp(0.95, 0, k);
   lerpC(orb.material.color, n.orb, d.orb, k);
-  arcLerp(orb.position, n.orbPos, SUN_ARC_CTRL, d.orbPos, k);
+  arcLerp(orb.position, sunPath.from, sunPath.ctrl, d.orbPos, k);
   moonlight.position.lerpVectors(n.dirPos, d.dirPos, k);
   lerpC(ambient.color, n.ambientColor, d.ambientColor, k);
   ambient.intensity = THREE.MathUtils.lerp(n.ambient, d.ambient, k);
@@ -430,7 +447,7 @@ function applyMood(k) {
   // each along its own curved arc
   orb.material.opacity = k;
   moon.material.opacity = (1 - k) * 0.95;
-  arcLerp(moon.position, MOON_NIGHT, MOON_ARC_CTRL, MOON_DAY, k);
+  arcLerp(moon.position, MOON_NIGHT, moonPath.ctrl, moonPath.to, k);
   // Sun shafts, glare, and motes only live in the sunset
   for (const child of sunRays.children) {
     child.material.opacity = child.userData.baseOpacity * k;
@@ -662,6 +679,8 @@ dayNightBtn.addEventListener("click", () => {
   moodTarget = moodTarget > 0.5 ? 0 : 1;
   document.body.classList.toggle("day", moodTarget > 0.5);
   dayNightBtn.setAttribute("aria-pressed", String(moodTarget > 0.5));
+  // Aim the sun/moon arcs at the correct sides for this direction of travel
+  aimCelestialPaths(moodTarget > 0.5);
   // Ollie relocates with the light: bed for the day's nap, sill for the night
   owlFlyTo(moodTarget > 0.5 ? "bed" : "sill");
 });
