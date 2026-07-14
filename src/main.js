@@ -658,30 +658,16 @@ composer.addPass(new OutputPass());
 applyMood(moodMix);
 document.body.classList.add("day");
 
-/* ═══════════════ UI: loader, modal, hint, audio ═══════════════ */
+/* ═══════════════ UI: loader, modal, audio ═══════════════ */
 
 const ambience = new Ambience();
 const loader = document.getElementById("loader");
-const loaderFill = document.getElementById("loader-fill");
 const enterBtn = document.getElementById("enter-btn");
-const hint = document.getElementById("hint");
 const muteBtn = document.getElementById("mute-btn");
 const modal = document.getElementById("modal");
 const modalEyebrow = document.getElementById("modal-eyebrow");
 const modalTitle = document.getElementById("modal-title");
 const modalBody = document.getElementById("modal-body");
-
-// Everything is procedural, so "loading" is theatre — but it sets the mood
-// (and becomes real once you swap in GLB models with a LoadingManager).
-let fakeProgress = 0;
-const progressTimer = setInterval(() => {
-  fakeProgress = Math.min(100, fakeProgress + 8 + Math.random() * 16);
-  loaderFill.style.width = `${fakeProgress}%`;
-  if (fakeProgress >= 100) {
-    clearInterval(progressTimer);
-    enterBtn.disabled = false;
-  }
-}, 140);
 
 let entering = false;
 let enterT = 0;
@@ -742,7 +728,6 @@ const raycaster = new THREE.Raycaster();
 const pointer = new THREE.Vector2(-10, -10);
 const clickables = [...interactives.map((i) => i.object), ...zoneTargets, ...refs.fidgets, ...refs.shelfPieces];
 let hovered = null;
-let interacted = false;
 
 function findAction(object) {
   let o = object;
@@ -834,11 +819,6 @@ function stepBack() {
   return !!res;
 }
 
-function markInteracted() {
-  if (interacted) return;
-  interacted = true;
-  hint.classList.add("faded");
-}
 
 /** Item activation, only valid inside the item's zone. */
 function activateItem(action) {
@@ -853,12 +833,10 @@ function activateItem(action) {
       // the lid opens onto the résumé — start at the top
       resumeScroll = 0;
       surfaces.resume.offset.y = 1 - RESUME_VIEW;
-      showHint("click the screen to zoom in");
     }
     if (action === "computer") {
       // the monitor wakes from its hello screensaver into the desktop
       refs.monitor.screen.material = desktopMat;
-      showHint("open the folders · type anything · click away to leave");
     }
     srLive.textContent = plainText(action);
   }
@@ -866,9 +844,7 @@ function activateItem(action) {
 
 /** Third tier: lean into the laptop screen — this is where scroll unlocks. */
 function zoomIntoScreen() {
-  if (!rig.zoomItem()) return false;
-  showHint("scroll to read · click away to step back");
-  return true;
+  return rig.zoomItem();
 }
 
 /** The owl performs from its sill: a hoot, a flap, a line of dialogue.
@@ -877,7 +853,6 @@ let owlPerfT = -1;
 let owlLineIdx = 0;
 function performOwl() {
   if (owlFlight.t >= 0) return; // mid-flight — let him land first
-  markInteracted();
   const asleep = moodMix > 0.6;
   if (asleep) {
     const line = SURFACES.owl.sleepy[owlLineIdx++ % SURFACES.owl.sleepy.length];
@@ -938,13 +913,6 @@ function performFidget(f) {
   if (!REDUCED_MOTION) startWiggle(f.obj, f.kind);
 }
 
-let hintTimer = 0;
-function showHint(text) {
-  hint.innerHTML = `<span class="hint-dot"></span> ${text}`;
-  hint.classList.remove("faded");
-  clearTimeout(hintTimer);
-  hintTimer = setTimeout(() => hint.classList.add("faded"), 4500);
-}
 
 // While the computer is focused, the keyboard types into its Notes app
 window.addEventListener("keydown", (e) => {
@@ -983,7 +951,6 @@ canvas.addEventListener("click", (e) => {
   const hit = hits.length ? hits[0].object : null;
   const action = hit ? findAction(hit) : null;
   const zone = hit ? findZone(hit) : null;
-  if (action || zone) markInteracted();
 
   // The owl performs in place from anywhere it can be seen
   if (action === "owl" && rig.mode !== "focused") {
@@ -997,7 +964,6 @@ canvas.addEventListener("click", (e) => {
   // still pan the camera over first
   const fidget = hit ? findFidget(hit) : null;
   if (fidget && (rig.mode === "zone" || (rig.mode === "free" && (!zone || fidget.kind === "chair")))) {
-    markInteracted();
     performFidget(fidget);
     return;
   }
@@ -1058,7 +1024,6 @@ for (const btn of document.querySelectorAll("#sr-nav button")) {
   btn.addEventListener("blur", () => rig.setHover(null));
   btn.addEventListener("click", () => {
     if (rig.traveling) return;
-    markInteracted();
     if (action === "owl") {
       performOwl();
       return;
