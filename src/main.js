@@ -740,7 +740,7 @@ window.addEventListener("keydown", (e) => {
 
 const raycaster = new THREE.Raycaster();
 const pointer = new THREE.Vector2(-10, -10);
-const clickables = [...interactives.map((i) => i.object), ...zoneTargets, ...refs.fidgets];
+const clickables = [...interactives.map((i) => i.object), ...zoneTargets, ...refs.fidgets, ...refs.shelfPieces];
 let hovered = null;
 let interacted = false;
 
@@ -897,6 +897,8 @@ function performOwl() {
    switches whose brightness eases toward their state in the tick loop. */
 
 const lampState = { floor: false, desk: false }; // day default: both off
+const _bulbOff = new THREE.Color(0x6a5a4c); // dark glass
+const _bulbOn = new THREE.Color(0xffe8c0);
 const wiggles = new Map(); // group → { t, kind }
 const chairSlide = { t: -1, out: false, fromZ: 0, toZ: 0, fromRy: 0, toRy: 0 };
 const CHAIR_IN = { z: -1.5, ry: 0 };
@@ -1032,6 +1034,13 @@ canvas.addEventListener("click", (e) => {
     }
     // Clicking the laptop screen leans in to read; anything else steps back
     if (action === "projects" && rig.action === "projects" && zoomIntoScreen()) return;
+    // Fidgets still respond during a close-up (e.g. the headphones while
+    // inspecting the shelf) instead of bouncing the camera back out
+    const focusedFidget = hit ? findFidget(hit) : null;
+    if (focusedFidget) {
+      performFidget(focusedFidget);
+      return;
+    }
     stepBack();
     return;
   }
@@ -1122,15 +1131,23 @@ function tick() {
     points.geometry.attributes.position.needsUpdate = true;
   }
 
-  // Lamps ease toward their switch state (mood toggles reset the defaults)
+  // Lamps ease toward their switch state (mood toggles reset the defaults).
+  // Daytime targets are dimmer: full night brightness under the day grade's
+  // stronger bloom washes the whole corner out.
   {
     const lk = Math.min(1, dt * 3.5);
-    lamp.light.intensity += ((lampState.floor ? 32 : 0) - lamp.light.intensity) * lk;
-    lamp.shadeMat.emissiveIntensity += ((lampState.floor ? 0.9 : 0.05) - lamp.shadeMat.emissiveIntensity) * lk;
+    const floorOn = THREE.MathUtils.lerp(32, 13, moodMix);
+    const floorGlow = THREE.MathUtils.lerp(0.9, 0.4, moodMix);
+    lamp.light.intensity += ((lampState.floor ? floorOn : 0) - lamp.light.intensity) * lk;
+    lamp.shadeMat.emissiveIntensity += ((lampState.floor ? floorGlow : 0.05) - lamp.shadeMat.emissiveIntensity) * lk;
+    // the bulb reads dark glass when off, warm when lit
+    lamp.bulbMat.color.lerpColors(_bulbOff, _bulbOn, Math.min(1, lamp.light.intensity / 20));
     const dl = refs.deskLamp;
-    dl.light.intensity += ((lampState.desk ? 6 : 0) - dl.light.intensity) * lk;
+    const deskOn = THREE.MathUtils.lerp(6, 3.5, moodMix);
+    dl.light.intensity += ((lampState.desk ? deskOn : 0) - dl.light.intensity) * lk;
     if (dl.shadeMat) {
-      dl.shadeMat.emissiveIntensity += ((lampState.desk ? 0.9 : 0.04) - dl.shadeMat.emissiveIntensity) * lk;
+      const deskGlow = THREE.MathUtils.lerp(0.9, 0.45, moodMix);
+      dl.shadeMat.emissiveIntensity += ((lampState.desk ? deskGlow : 0.04) - dl.shadeMat.emissiveIntensity) * lk;
     }
   }
 

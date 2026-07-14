@@ -105,6 +105,16 @@ export const SURFACES = {
       "and designers in src/content.js.",
     ],
   },
+  // Close-up on the wall shelves (action "shelf")
+  shelf: {
+    title: "The shelves",
+    lines: [
+      "Books I keep meaning to reread, an alarm",
+      "clock that's never once been set, a tiny",
+      "tree, and the headphones on their stand.",
+    ],
+  },
+
   // The monitor's little desktop OS (action "computer"). Folders open into
   // windows; Notes takes whatever the visitor types.
   computer: {

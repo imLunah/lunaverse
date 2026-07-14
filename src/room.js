@@ -281,7 +281,8 @@ function buildWallShelves() {
   const face = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.08, 20), mat(PALETTE.amber, { roughness: 0.4 }));
   face.rotation.x = Math.PI / 2;
   face.position.y = 0.16;
-  const dial = new THREE.Mesh(new THREE.CircleGeometry(0.1, 20), new THREE.MeshBasicMaterial({ color: 0xfdf6e9 }));
+  // lit material — an unlit white disc blooms into a glowing ball
+  const dial = new THREE.Mesh(new THREE.CircleGeometry(0.1, 20), mat(0xfdf6e9, { roughness: 0.9 }));
   dial.position.set(0, 0.16, 0.045);
   for (const s of [-1, 1]) {
     const bell = new THREE.Mesh(new THREE.SphereGeometry(0.045, 10, 8), mat(PALETTE.ember, { roughness: 0.4 }));
@@ -456,6 +457,7 @@ function buildLamp() {
   refs.shadeMat = shade.material;
   const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.14, 12, 12), new THREE.MeshBasicMaterial({ color: 0xffe8c0 }));
   bulb.position.y = 3.2;
+  refs.bulbMat = bulb.material; // main.js darkens it when the lamp is off
   lamp.add(pole, foot, shade, bulb);
 
   const light = new THREE.PointLight(0xffb46b, 30, 14, 1.8);
@@ -626,6 +628,9 @@ export function buildRoom() {
   const wallShelves = buildWallShelves();
   wallShelves.position.set(-2.6, 0, wz + 0.42);
   room.add(wallShelves);
+  // Clicking the shelves (or their accents) leans in for a closer look
+  refs.shelfPieces = [wallShelves];
+  wallShelves.userData.action = "shelf";
 
   const hangingPlant = buildHangingPlant();
   hangingPlant.position.set(-0.4, 4.5, wz + 0.5);
@@ -687,10 +692,13 @@ export function buildRoom() {
   // Little accents on the wall shelves
   const shelfPlant = placeModel("plantSmall1", { scale: 5.5 });
   shelfPlant.position.set(-1.8, 3.15, wz + 0.42);
+  shelfPlant.userData.action = "shelf";
   room.add(shelfPlant);
   const shelfBooks = placeModel("books", { scale: 3, rotationY: -0.2 });
   shelfBooks.position.set(-3.3, 3.15, wz + 0.42);
+  shelfBooks.userData.action = "shelf";
   room.add(shelfBooks);
+  refs.shelfPieces.push(shelfPlant, shelfBooks);
 
   // Headphone stand between the books and the plant, with the XM4 hanging
   // from its saddle — "Sony WH-1000XM4 - Black and brown" by Lauri Grekula
@@ -707,6 +715,8 @@ export function buildRoom() {
   hpStand.add(hsBase, hsPost, hsSaddle);
   hpStand.traverse((o) => { o.castShadow = true; });
   hpStand.position.set(-2.55, 3.145, wz + 0.42);
+  hpStand.userData.action = "shelf";
+  refs.shelfPieces.push(hpStand);
   room.add(hpStand);
   const phones = placeModel("headphonesXM4", { scale: 0.26, rotationY: Math.PI / 2 });
   // hang from the saddle: band top kisses it, cups float just above the shelf
