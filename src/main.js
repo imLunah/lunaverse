@@ -991,11 +991,12 @@ canvas.addEventListener("click", (e) => {
     return;
   }
 
-  // Fidgets perform in place: inside a zone always; from home only for
-  // objects that don't belong to a zone (lamps, the shelf headphones) —
-  // zone-owned props still pan the camera over first
+  // Fidgets perform in place: inside a zone always; from home for objects
+  // that don't belong to a zone (lamps, the shelf headphones) and for the
+  // chair (pulling it out works from anywhere) — other zone-owned props
+  // still pan the camera over first
   const fidget = hit ? findFidget(hit) : null;
-  if (fidget && (rig.mode === "zone" || (rig.mode === "free" && !zone))) {
+  if (fidget && (rig.mode === "zone" || (rig.mode === "free" && (!zone || fidget.kind === "chair")))) {
     markInteracted();
     performFidget(fidget);
     return;
