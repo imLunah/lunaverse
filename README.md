@@ -1,9 +1,25 @@
-# John Dang · A Cozy Corner
+# A Cozy Corner
 
-An interactive 3D "about me" website in the spirit of
-[andrewwoan's romantic comfort website](https://github.com/andrewwoan/john-and-patricias-romantic-comfort-website) —
-a warm little room at night, built with Three.js. Drag to look around; click the
-glowing things (laptop, envelope, radio, photo frame, and Ollie the owl).
+A personal, interactive 3D room you can step into — my little corner of the
+internet. Built from scratch with Three.js: a warm attic with a golden-hour
+sunset that swings to a moonlit night, a desk you can actually use, and an owl
+named Ollie who keeps his own hours.
+
+**Live:** https://lunaverse.vercel.app
+
+## What's in the room
+
+- **First person and hands-on.** You stand in the room and drag to look
+  around. Click an area to move in for a closer look, then click the things
+  in it.
+- **Day and night.** A toggle sweeps the sun down and the moon up along a real
+  arc, and the lamps become switches you can flip on and off.
+- **A working desk.** The laptop opens onto a scrollable résumé; the monitor
+  runs a little desktop with folders you can open and a notes app you can type
+  into; the chair pulls out and the small props react when you click them.
+- **Ollie the owl.** He turns his whole face to follow your cursor, sleeps on
+  the bed through the day and wakes on the windowsill at night, and hoots when
+  you say hi.
 
 ## Run it
 
@@ -13,29 +29,30 @@ npm run dev      # local dev server
 npm run build    # production build → dist/
 ```
 
-## Everything is a placeholder on purpose
+## Make it yours
 
-The whole room is procedural geometry so the site works before any assets exist.
-When your real pics and Blender models are ready:
+All the words live in [src/content.js](src/content.js) — the résumé, the
+desktop folders, the owl's dialogue, the bio. Swap in your own and the room
+reads it.
 
-| Swap this | Where | How |
-| --- | --- | --- |
-| The room model | [src/room.js](src/room.js) | Export a GLB to `public/models/` and load it with `GLTFLoader`. Tag clickable meshes with `userData.action = "about" \| "projects" \| "contact" \| "radio" \| "owl"` and push them into `interactives` — everything else (raycasting, halos, modals) keeps working. |
-| Owl / robin models | [src/creatures.js](src/creatures.js) | Same idea — keep `userData.action = "owl"` on the big owl. |
-| Your photo | [src/room.js](src/room.js) `placeholderPhotoTexture()` | Load a `TextureLoader` image from `public/images/` instead of the canvas texture. |
-| Bio / projects / contact copy | [src/content.js](src/content.js) | Plain HTML strings — edit freely. |
-| The radio's tune | [src/audio.js](src/audio.js) | Currently generated with WebAudio. Drop an mp3 in `public/audio/` and keep the `start() / stop() / toggle()` API. |
-| Loading progress | [src/main.js](src/main.js) | Currently simulated. Once you load real GLBs, drive the bar from a `THREE.LoadingManager` instead. |
+## How it's built
 
-## Structure
+Vanilla Three.js, no framework, bundled with Vite. Key modules:
 
 ```
-index.html          loading screen, overlay UI, modal shell
-src/style.css       theme (Fraunces + Karla, dusk palette)
-src/main.js         renderer, camera, lights, raycasting, UI wiring
-src/room.js         procedural room + furniture + interactive tags
-src/creatures.js    owls (blinking, breathing) + orbiting robin
-src/fireflies.js    shader point-cloud fireflies
-src/audio.js        generated ambience + owl hoot
-src/content.js      all site copy
+src/main.js          renderer, camera, lights, day/night moods, interaction wiring
+src/room.js          the room, furniture, and interactive props
+src/choreography.js  camera choreography — zones, focus, and close-ups
+src/creatures.js     Ollie the owl and the robin outside the window
+src/desktop.js       the little desktop OS on the monitor
+src/surfaces.js      the canvas screens — résumé and the handwritten "hello"
+src/content.js       all the copy
+src/models.js        glTF model loading
 ```
+
+## Credits
+
+Furniture is the [Kenney Furniture Kit](https://kenney.nl/assets/furniture-kit)
+(CC0). The headphones are "Sony WH-1000XM4 - Black and brown" by Lauri Grekula
+(CC BY 4.0), simplified for the web — full attribution in
+[public/models/furniture/CREDITS.txt](public/models/furniture/CREDITS.txt).

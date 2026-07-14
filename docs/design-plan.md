@@ -1,10 +1,9 @@
 # Design Plan — Cozy Corner v2 (post plan-design-review, 2026-07-12)
 
-Brief from John: "It doesn't look like the link I sent. I want the design to be
-similar and there should be more animations when I click on certain objects."
-Reference: andrewwoan/john-and-patricias-romantic-comfort-website (Three.js baked
-Blender room; Outline.js hover highlight, Camera.js zoom-to-object, 33KB of
-per-object click choreography, day/night texture sets, butterfly/candle idle life).
+Brief from John: a warm, personal 3D room with more animation and life when you
+click on things — a cozy first-person space that feels lived-in, not a template.
+Direction: baked/stylized Three.js room, hover highlights, camera zoom-to-object,
+per-object click choreography, day/night moods, and small idle life.
 
 ## Post-review pivots (approved at build checkpoints, 2026-07-12)
 
