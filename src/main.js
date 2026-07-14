@@ -1322,6 +1322,14 @@ modelsReady().then(() => {
       refs.deskLamp.shadeMat = o.material;
     }
   });
+  // Bed blanket: clone the kit's shared "carpet" material and tint it moss
+  // green (cloning keeps the pink office chair pink)
+  refs.bed.traverse((o) => {
+    if (o.isMesh && o.material && o.material.name === "carpet") {
+      o.material = o.material.clone();
+      o.material.color.setHex(0x7c8a5a);
+    }
+  });
   applyMood(moodMix); // re-apply so the shade picks up the current mood
 });
 

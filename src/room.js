@@ -637,6 +637,7 @@ export function buildRoom() {
   const bed = placeModel("bedDouble", { scale: 2.7 }); // true model is 0.96×1.13
   bed.position.set(3.3, 0, -2.65); // tucked under the window's right edge, like the reference
   room.add(bed);
+  refs.bed = bed; // main.js retints the blanket once the model loads
 
   const player = buildRecordPlayer(interactives, refs);
   player.position.set(4.35, 0, 0.4);
