@@ -171,6 +171,8 @@ function buildDesk(interactives, refs) {
   const keyboard = placeModel("computerKeyboard", { scale: 3.2 }); // 0.90 wide — spans x ±0.45
   keyboard.position.set(0.55, TOP, 0.35);
   keyboard.rotation.y = -0.06;
+  keyboard.userData.fidget = "keyboard";
+  refs.fidgets.push(keyboard);
   desk.add(keyboard);
 
   const deskBooks = placeModel("books", { scale: 3 });
@@ -191,6 +193,8 @@ function buildDesk(interactives, refs) {
   mouse.add(mouseBody, mouseSeam);
   mouse.position.set(1.3, TOP + 0.014, 0.44);
   mouse.rotation.y = -0.35;
+  mouse.userData.fidget = "mouse";
+  refs.fidgets.push(mouse);
   desk.add(mouse);
 
   return desk;
@@ -512,6 +516,7 @@ function buildWindow() {
 export function buildRoom() {
   const interactives = [];
   const refs = {};
+  refs.fidgets = []; // click-toys: chair, props, lamp switches (main.js animates)
   const room = new THREE.Group();
 
   // Shared materials the day/night grade lerps (see MOODS in main.js).
@@ -610,6 +615,8 @@ export function buildRoom() {
   chair.position.set(-2.3, 0, -1.5);
   room.add(chair);
   chair.userData.zone = "desk";
+  chair.userData.fidget = "chair"; // clicking in the desk zone pulls it out to sit
+  refs.fidgets.push(chair);
 
   const shelf = placeModel("bookcaseOpen", { scale: 4.5, rotationY: Math.PI / 2 });
   shelf.position.set(-4.1, 0, 1.6); // centered footprint clears the wall
@@ -645,6 +652,8 @@ export function buildRoom() {
 
   const lamp = buildLamp();
   lamp.group.position.set(-4.1, 0, 3.3); // front-left corner, clear of the bed
+  lamp.group.userData.fidget = "lampFloor"; // click to switch it on/off
+  refs.fidgets.push(lamp.group);
   room.add(lamp.group);
 
   const photo = buildPhotoFrame(interactives, refs);
@@ -701,6 +710,8 @@ export function buildRoom() {
   const phones = placeModel("headphonesXM4", { scale: 0.26, rotationY: Math.PI / 2 });
   // hang from the saddle: band top kisses it, cups float just above the shelf
   phones.position.set(-2.55, 3.23, wz + 0.42);
+  phones.userData.fidget = "headphones";
+  refs.fidgets.push(phones);
   room.add(phones);
 
   // Little desk lamp (Kenney lampRoundTable) tucked between laptop and monitor
@@ -712,6 +723,8 @@ export function buildRoom() {
   dlLight.position.set(0, 0.95, 0);
   deskLamp.add(dlLight);
   deskLamp.position.set(-2.35, 1.68, -3.95);
+  deskLamp.userData.fidget = "lampDesk"; // click to switch it on/off
+  refs.fidgets.push(deskLamp);
   room.add(deskLamp);
   refs.deskLamp = { group: deskLamp, light: dlLight, shadeMat: null };
 

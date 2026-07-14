@@ -430,7 +430,7 @@ const MOODS = {
     orb: new THREE.Color(0xff8a55), // the setting sun's color mid-transition; its path lives in sunTravel
     ambient: 0.48, ambientColor: new THREE.Color(0x9c8a7a), hemi: 0.22,
     dir: new THREE.Color(0xa8c4ff), dirIntensity: 0.5, dirPos: new THREE.Vector3(8, 16, -14),
-    lampLight: 32, lampShade: 0.9, deskLamp: 6, deskGlow: 0.9, exposure: 1.0, env: 0.14, screens: 0.68,
+    exposure: 1.0, env: 0.14, screens: 0.68,
     bloom: 0.25, bloomThreshold: 0.88,
     wall: new THREE.Color(0x8a7266), floor: new THREE.Color(0.55, 0.44, 0.36),
     trim: new THREE.Color(0.42, 0.3, 0.22), ceil: new THREE.Color(0x6a5a4c),
@@ -441,7 +441,7 @@ const MOODS = {
     orb: new THREE.Color(0xffd489), orbPos: new THREE.Vector3(3.5, 8.5, -60), // low sun, visible through the panes
     ambient: 0.12, ambientColor: new THREE.Color(0xffd9c0), hemi: 0.08,
     dir: new THREE.Color(0xff9848), dirIntensity: 5.6, dirPos: new THREE.Vector3(4.5, 5.8, -16), // shallow golden shaft
-    lampLight: 0, lampShade: 0.05, deskLamp: 0, deskGlow: 0.04, exposure: 0.95, env: 0.08, screens: 0.7,
+    exposure: 0.95, env: 0.08, screens: 0.7,
     bloom: 0.45, bloomThreshold: 0.82,
     wall: new THREE.Color(0xbaa384), floor: new THREE.Color(0.78, 0.58, 0.42), trim: new THREE.Color(0.58, 0.4, 0.27),
     ceil: new THREE.Color(0xa8987f),
@@ -468,14 +468,9 @@ function applyMood(k) {
   hemi.intensity = THREE.MathUtils.lerp(n.hemi, d.hemi, k);
   lerpC(moonlight.color, n.dir, d.dir, k);
   moonlight.intensity = THREE.MathUtils.lerp(n.dirIntensity, d.dirIntensity, k);
-  lamp.light.intensity = THREE.MathUtils.lerp(n.lampLight, d.lampLight, k);
-  lamp.shadeMat.emissiveIntensity = THREE.MathUtils.lerp(n.lampShade, d.lampShade, k);
   sillLight.intensity = THREE.MathUtils.lerp(0.5, 2.4, k);
   lerpC(sillLight.color, new THREE.Color(0xaec6ff), new THREE.Color(0xffb877), k);
-  refs.deskLamp.light.intensity = THREE.MathUtils.lerp(n.deskLamp, d.deskLamp, k);
-  if (refs.deskLamp.shadeMat) {
-    refs.deskLamp.shadeMat.emissiveIntensity = THREE.MathUtils.lerp(n.deskGlow, d.deskGlow, k);
-  }
+  // (the two lamps are manual switches now — lampState + the tick loop own them)
   // Celestial positions are owned by the travelers (see the tick loop) —
   // applyMood only grades colors and lights
   // Sun shafts, glare, and motes only live in the sunset
@@ -711,6 +706,8 @@ dayNightBtn.addEventListener("click", () => {
   dayNightBtn.setAttribute("aria-pressed", String(moodTarget > 0.5));
   // Aim the sun/moon arcs at the correct sides for this direction of travel
   aimCelestialPaths(moodTarget > 0.5);
+  // The mood resets the lamps to their defaults: on at night, off by day
+  lampState.floor = lampState.desk = moodTarget < 0.5;
   // Ollie relocates with the light: bed for the day's nap, sill for the night
   owlFlyTo(moodTarget > 0.5 ? "bed" : "sill");
 });
@@ -743,7 +740,7 @@ window.addEventListener("keydown", (e) => {
 
 const raycaster = new THREE.Raycaster();
 const pointer = new THREE.Vector2(-10, -10);
-const clickables = [...interactives.map((i) => i.object), ...zoneTargets];
+const clickables = [...interactives.map((i) => i.object), ...zoneTargets, ...refs.fidgets];
 let hovered = null;
 let interacted = false;
 
@@ -760,6 +757,15 @@ function findZone(object) {
   let o = object;
   while (o) {
     if (o.userData.zone) return o.userData.zone;
+    o = o.parent;
+  }
+  return null;
+}
+
+function findFidget(object) {
+  let o = object;
+  while (o) {
+    if (o.userData.fidget) return { kind: o.userData.fidget, obj: o };
     o = o.parent;
   }
   return null;
@@ -886,6 +892,50 @@ function performOwl() {
   srLive.textContent = `${SURFACES.owl.name} the owl says: ${line}`;
 }
 
+/* ── Fidgets: click-toys with in-place performances ──
+   The chair pulls out to sit; small props wiggle; the two lamps are real
+   switches whose brightness eases toward their state in the tick loop. */
+
+const lampState = { floor: false, desk: false }; // day default: both off
+const wiggles = new Map(); // group → { t, kind }
+const chairSlide = { t: -1, out: false, fromZ: 0, toZ: 0, fromRy: 0, toRy: 0 };
+const CHAIR_IN = { z: -1.5, ry: 0 };
+const CHAIR_OUT = { z: -0.72, ry: 0.5 };
+
+function startWiggle(obj, kind) {
+  if (!obj.userData.fidgetBase) {
+    obj.userData.fidgetBase = { pos: obj.position.clone(), rotY: obj.rotation.y };
+  }
+  wiggles.set(obj, { t: 0, kind });
+}
+
+function performFidget(f) {
+  if (f.kind === "chair") {
+    chairSlide.out = !chairSlide.out;
+    const dest = chairSlide.out ? CHAIR_OUT : CHAIR_IN;
+    if (REDUCED_MOTION) {
+      f.obj.position.z = dest.z;
+      f.obj.rotation.y = dest.ry;
+    } else {
+      chairSlide.fromZ = f.obj.position.z;
+      chairSlide.fromRy = f.obj.rotation.y;
+      chairSlide.toZ = dest.z;
+      chairSlide.toRy = dest.ry;
+      chairSlide.t = 0;
+    }
+    srLive.textContent = chairSlide.out ? "Pulled the chair out." : "Tucked the chair back in.";
+    return;
+  }
+  if (f.kind === "lampFloor" || f.kind === "lampDesk") {
+    const key = f.kind === "lampFloor" ? "floor" : "desk";
+    lampState[key] = !lampState[key];
+    srLive.textContent = lampState[key] ? "Lamp on." : "Lamp off.";
+    if (!REDUCED_MOTION) startWiggle(f.obj, f.kind);
+    return;
+  }
+  if (!REDUCED_MOTION) startWiggle(f.obj, f.kind);
+}
+
 let hintTimer = 0;
 function showHint(text) {
   hint.innerHTML = `<span class="hint-dot"></span> ${text}`;
@@ -936,6 +986,16 @@ canvas.addEventListener("click", (e) => {
   // The owl performs in place from anywhere it can be seen
   if (action === "owl" && rig.mode !== "focused") {
     performOwl();
+    return;
+  }
+
+  // Fidgets perform in place: inside a zone always; from home only for
+  // objects that don't belong to a zone (lamps, the shelf headphones) —
+  // zone-owned props still pan the camera over first
+  const fidget = hit ? findFidget(hit) : null;
+  if (fidget && (rig.mode === "zone" || (rig.mode === "free" && !zone))) {
+    markInteracted();
+    performFidget(fidget);
     return;
   }
 
@@ -1060,6 +1120,54 @@ function tick() {
       arr[i * 3 + 1] = base[i * 3 + 1] + Math.sin(t * 0.22 + seed[i] * 1.7) * 0.18;
     }
     points.geometry.attributes.position.needsUpdate = true;
+  }
+
+  // Lamps ease toward their switch state (mood toggles reset the defaults)
+  {
+    const lk = Math.min(1, dt * 3.5);
+    lamp.light.intensity += ((lampState.floor ? 32 : 0) - lamp.light.intensity) * lk;
+    lamp.shadeMat.emissiveIntensity += ((lampState.floor ? 0.9 : 0.05) - lamp.shadeMat.emissiveIntensity) * lk;
+    const dl = refs.deskLamp;
+    dl.light.intensity += ((lampState.desk ? 6 : 0) - dl.light.intensity) * lk;
+    if (dl.shadeMat) {
+      dl.shadeMat.emissiveIntensity += ((lampState.desk ? 0.9 : 0.04) - dl.shadeMat.emissiveIntensity) * lk;
+    }
+  }
+
+  // Prop wiggles: a decaying shake, then everything returns home exactly
+  for (const [obj, w] of wiggles) {
+    w.t += dt / 0.7;
+    const p = Math.min(w.t, 1);
+    const d = (1 - p) * Math.sin(p * Math.PI * 5);
+    const base = obj.userData.fidgetBase;
+    if (w.kind === "keyboard") {
+      obj.position.y = base.pos.y + Math.abs(d) * 0.04;
+      obj.rotation.x = d * 0.07;
+    } else if (w.kind === "mouse") {
+      obj.rotation.y = base.rotY + d * 0.5;
+      obj.position.z = base.pos.z + d * 0.03;
+    } else if (w.kind === "headphones") {
+      obj.position.y = base.pos.y + Math.abs(d) * 0.05;
+      obj.rotation.y = base.rotY + d * 0.28;
+    } else {
+      obj.rotation.z = d * 0.05; // lamps acknowledge the switch with a nudge
+    }
+    if (p >= 1) {
+      obj.position.copy(base.pos);
+      obj.rotation.set(0, base.rotY, 0);
+      wiggles.delete(obj);
+    }
+  }
+
+  // Chair slide: pulled out to sit, tucked back in
+  if (chairSlide.t >= 0) {
+    chairSlide.t += dt / 0.6;
+    const p = Math.min(chairSlide.t, 1);
+    const e = p * p * (3 - 2 * p);
+    const chair = refs.fidgets.find((o) => o.userData.fidget === "chair");
+    chair.position.z = THREE.MathUtils.lerp(chairSlide.fromZ, chairSlide.toZ, e);
+    chair.rotation.y = THREE.MathUtils.lerp(chairSlide.fromRy, chairSlide.toRy, e);
+    if (p >= 1) chairSlide.t = -1;
   }
 
   // Sun/moon travelers: each body flies its own arc, retargeted from its
@@ -1188,8 +1296,9 @@ function tick() {
     const hit = hits.length ? hits[0].object : null;
     hovered = hit ? findAction(hit) : null;
     const zoneHover = hit ? findZone(hit) : null;
+    const fidgetHover = hit ? findFidget(hit) : null;
     if (!look.dragging) rig.setHover(hovered);
-    document.body.classList.toggle("can-click", !!(hovered || zoneHover));
+    document.body.classList.toggle("can-click", !!(hovered || zoneHover || fidgetHover));
   } else {
     hovered = null;
     // clicking steps back (or, on the laptop, leans in)

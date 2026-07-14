@@ -114,6 +114,13 @@ Three-beat interaction pattern (approved 3A, docs/design-plan.md):
 2. **Travel** — camera tween 0.9s ease-out cubic to the object's saved viewpoint (only where it helps: laptop, envelope, frame — radio and owl perform in place).
 3. **Reveal** — the object performs (lid opens, letter unfolds, frame swings, radio wobbles, owl flaps). Close reverses everything, camera glides home 0.9s.
 
+**Fidgets:** small click-toys that perform in place, no camera travel — the
+desk chair pulls out to sit (and tucks back in), the keyboard/mouse/headphones
+give a decaying wiggle, and both lamps are real switches (brightness eases
+toward the state; the day/night toggle resets them to on-at-night defaults).
+Inside a zone fidgets always fire; from home only zoneless ones do (lamps,
+the shelf headphones) — zone-owned props pan the camera first.
+
 Object springs ~300ms with slight overshoot. Idle life: the robin outside,
 drifting dust motes in the sun shafts, the owl's blink and cursor-tracking
 gaze — ambient, never competing with clickables. (The butterfly read as a
